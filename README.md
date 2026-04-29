@@ -34,7 +34,7 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 This app is deployed as a Vite React project using Vercel.
 
 - Build command: `npm run build`
-- Output directory: `dist`
+- Output directory: `build`
 - Vercel config file: `vercel.json`
 
 To deploy manually from the project root:
