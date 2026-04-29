@@ -29,6 +29,23 @@ Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
+## Vercel Deployment
+
+This app is deployed as a Vite React project using Vercel.
+
+- Build command: `npm run build`
+- Output directory: `dist`
+- Vercel config file: `vercel.json`
+
+To deploy manually from the project root:
+
+```bash
+npm install
+vercel --prod
+```
+
+If you connect this repo in the Vercel dashboard, use the root directory and the same build/output settings.
+
 ### `npm run eject`
 
 **Note: this is a one-way operation. Once you `eject`, you can't go back!**
