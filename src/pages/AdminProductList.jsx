@@ -333,10 +333,10 @@ const AdminProductList = () => {
                           sx={{ mr: 0.5 }}
                         />
                       )}
-                      <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
+                      <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold', fontSize: '16px'}}>
                         Total Pieces: {formatNum(totalPieces)}
                       </Typography>
-                      <Typography variant="body2" color="info.main">
+                      <Typography variant="body2" color="info.main" sx={{ fontWeight: 'bold', fontSize: '16px'}}>
                         Stock Quantity: (Cart: {formatNum(displayCartons)}, Lose: {formatNum(displayLosePieces)})
                       </Typography>
                       <Typography variant="body2" color="text.secondary" component="span">
