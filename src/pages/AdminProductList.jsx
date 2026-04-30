@@ -324,7 +324,7 @@ const AdminProductList = () => {
                         Stock low: {formatNum(totalPieces)} pcs. {reorderLevel ? `Reorder level: ${formatNum(reorderLevel)}.` : ''}
                       </Alert>
                     )}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
                       {product.subCategory && (
                         <Chip
                           label={product.subCategory}
