@@ -142,7 +142,10 @@ const uploadFile = async (file) => {
   const formData = new FormData();
   formData.append('image', file);
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/upload`, {
+    const rawApiUrl = import.meta.env.VITE_API_URL || '';
+    const trimmedApiUrl = rawApiUrl.replace(/\/$/, '');
+    const apiRoot = trimmedApiUrl ? (trimmedApiUrl.endsWith('/api') ? trimmedApiUrl : `${trimmedApiUrl}/api`) : '/api';
+    const response = await fetch(`${apiRoot}/upload`, {
       method: 'POST',
       body: formData,
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },

@@ -698,17 +698,24 @@ const SellerSaleEntry = () => {
   const handleResendEmail = async (sale) => {
     try {
       const token = localStorage.getItem('token');
-      const emailRes = await API.post(`/sales/${sale._id}/resend-email`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const emailRes = await API.post(`/sales/${sale._id}/resend-email`, {}, { 
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 90000 // 90 seconds timeout for email operations
+      });
       const returnedSale = emailRes.data.sale || {};
       const paid = returnedSale.paymentMethod === 'Cash' ? (returnedSale.cashAmount || 0) : (returnedSale.paidAmount || 0);
       const change = returnedSale.changeAmount || 0;
-      setSuccess(`Email resend attempted (Paid: Rs. ${paid.toLocaleString()}, Change: Rs. ${change.toLocaleString()})`);
+      setSuccess(`Email resent successfully (Paid: Rs. ${paid.toLocaleString()}, Change: Rs. ${change.toLocaleString()})`);
       // refresh recent sales
       const payload = JSON.parse(atob(token.split('.')[1]));
       const res = await API.get(`/sales?sellerId=${payload.id}&limit=10`, { headers: { Authorization: `Bearer ${token}` } });
       setRecentSales(Array.isArray(res.data) ? res.data.slice(0, 10) : []);
     } catch (e) {
-      setError(e.response?.data?.error || 'Failed to resend email');
+      if (e.code === 'ECONNABORTED') {
+        setError('Email operation timed out. Please try again.');
+      } else {
+        setError(e.response?.data?.error || 'Failed to resend email');
+      }
     }
   };
 

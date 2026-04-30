@@ -11,6 +11,7 @@ const baseURL = isCodespaces
 
 const API = axios.create({
   baseURL,
+  timeout: 60000, // 60 seconds timeout for all requests
 });
 
 // Add request interceptor to include Authorization header

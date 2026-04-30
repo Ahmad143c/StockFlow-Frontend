@@ -56,6 +56,9 @@ const AdminSalesReport = () => {
   const [endDate, setEndDate] = useState('');
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   const [printPreviewHtml, setPrintPreviewHtml] = useState('');
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState(null);
+  const [tooltipAnchorEl, setTooltipAnchorEl] = useState(null);
   const previewRef = useRef(null);
   const products = useSelector(state => (state?.products?.items) ?? []);
 
@@ -813,46 +816,62 @@ const AdminSalesReport = () => {
                       <TableCell sx={cellSx}>{sale.cashierName || '-'}</TableCell>
                       <TableCell sx={cellSx}>
                         <Tooltip
-                          title={
-                            <Box sx={{ p: 0.5 }}>
-                              {sale.items.map(i => {
-                                const origQty = Number(i.quantity) || 0;
-                                const refunded = calculateRefundedQty(sale, i.productId);
-                                const remaining = origQty - refunded;
-                                return (
-                                  <Typography key={i.productId} variant="caption" display="block">
-                                    {i.productName || '-'} x{remaining}{refunded ? ` (-${refunded} ref)` : ''}
-                                  </Typography>
-                                );
-                              })}
-                            </Box>
-                          }
+                          open={tooltipOpen && tooltipAnchorEl === `items-${sale._id}`}
+                          title={tooltipContent}
                           arrow
+                          onClose={() => setTooltipOpen(false)}
                         >
                           <Chip
                             label={`${sale.items.length} Products`}
                             size="small"
                             sx={{ cursor: 'pointer', height: 24 }}
+                            onClick={(e) => {
+                              setTooltipContent(
+                                <Box sx={{ p: 0.5 }}>
+                                  {sale.items.map(i => {
+                                    const origQty = Number(i.quantity) || 0;
+                                    const refunded = calculateRefundedQty(sale, i.productId);
+                                    const remaining = origQty - refunded;
+                                    return (
+                                      <Typography key={i.productId} variant="caption" display="block">
+                                        {i.productName || '-'} x{remaining}{refunded ? ` (-${refunded} ref)` : ''}
+                                      </Typography>
+                                    );
+                                  })}
+                                </Box>
+                              );
+                              setTooltipAnchorEl(`items-${sale._id}`);
+                              setTooltipOpen(true);
+                              setTimeout(() => setTooltipOpen(false), 10000);
+                            }}
                           />
                         </Tooltip>
                       </TableCell>
                       <TableCell sx={cellSx}>
                         <Tooltip
-                          title={
-                            <Box sx={{ p: 0.5 }}>
-                              {sale.items.map(i => (
-                                <Typography key={i.productId} variant="caption" display="block">
-                                  {i.productName || '-'}: Rs. {Number(i.perPiecePrice || 0).toLocaleString()}
-                                </Typography>
-                              ))}
-                            </Box>
-                          }
+                          open={tooltipOpen && tooltipAnchorEl === `price-${sale._id}`}
+                          title={tooltipContent}
                           arrow
+                          onClose={() => setTooltipOpen(false)}
                         >
                           <Chip
                             label={sale.items.slice(0, 2).map(i => `Rs. ${Number(i.perPiecePrice || 0).toLocaleString()}`).join(', ') + (sale.items.length > 2 ? '...' : '')}
                             size="small"
                             sx={{ cursor: 'pointer', height: 24 }}
+                            onClick={(e) => {
+                              setTooltipContent(
+                                <Box sx={{ p: 0.5 }}>
+                                  {sale.items.map(i => (
+                                    <Typography key={i.productId} variant="caption" display="block">
+                                      {i.productName || '-'}: Rs. {Number(i.perPiecePrice || 0).toLocaleString()}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              );
+                              setTooltipAnchorEl(`price-${sale._id}`);
+                              setTooltipOpen(true);
+                              setTimeout(() => setTooltipOpen(false), 10000);
+                            }}
                           />
                         </Tooltip>
                       </TableCell>
@@ -882,8 +901,18 @@ const AdminSalesReport = () => {
                       <TableCell sx={cellSx}>{sale.paymentStatus}</TableCell>
                       <TableCell sx={cellSx}>
                         {underWarranty ? (
-                          <Tooltip title={warrantyTooltip} arrow>
-                            <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                          <Tooltip
+                            open={tooltipOpen && tooltipAnchorEl === `warranty-${sale._id}`}
+                            title={tooltipContent}
+                            arrow
+                            onClose={() => setTooltipOpen(false)}
+                          >
+                            <Box sx={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }} onClick={() => {
+                              setTooltipContent(warrantyTooltip);
+                              setTooltipAnchorEl(`warranty-${sale._id}`);
+                              setTooltipOpen(true);
+                              setTimeout(() => setTooltipOpen(false), 10000);
+                            }}>
                               <Chip
                                 label={`${warrantyUntil.toLocaleDateString()}`}
                                 size="small"

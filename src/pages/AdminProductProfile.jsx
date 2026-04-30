@@ -10,6 +10,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import StarIcon from '@mui/icons-material/Star';
+import { useDarkMode } from '../context/DarkModeContext';
 
 const formatNum = n => n?.toLocaleString('en-IN');
 
@@ -141,6 +142,7 @@ const AdminProductProfile = () => {
 
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
+  const { darkMode } = useDarkMode();
 
   const monthlyProgress = useMemo(() => {
     if (!analytics) return 0;
@@ -498,7 +500,7 @@ const AdminProductProfile = () => {
         <Grid container spacing={{ xs: 2, md: 4 }} sx={{ pt: 4 }}>
           <Grid item xs={12} md={4}>
             <Paper elevation={3} sx={{ p: 2, background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)', borderRadius: 3 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom sx={{display:'flex',alignItems:'center',gap:1}}><AttachMoneyIcon fontSize="small" />Revenue Overview</Typography>
+              <Typography variant="h6" fontWeight={700} gutterBottom sx={{display:'flex',alignItems:'center',gap:1, color: darkMode ? 'white' : 'black'}}><AttachMoneyIcon fontSize="small" />Revenue Overview</Typography>
               {analytics ? (
                 <>
                   <Typography variant="body2">Total Revenue: <b>Rs. {formatNum(analytics.totalRevenue)}</b></Typography>
@@ -526,7 +528,7 @@ const AdminProductProfile = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <Paper elevation={3} sx={{ p: 2, cursor: 'pointer', transition: 'box-shadow 0.3s', '&:hover': { boxShadow: 6 }, background: 'linear-gradient(135deg, #f3e5f5 0%, #ce93d8 100%)', borderRadius: 3 }} onClick={() => setActivityOpen(true)}>
-              <Typography variant="h6" fontWeight={700} gutterBottom sx={{display:'flex',alignItems:'center',gap:1}}><InventoryIcon fontSize="small" />Product Activity</Typography>
+              <Typography variant="h6" fontWeight={700} gutterBottom sx={{display:'flex',alignItems:'center',gap:1, color: darkMode ? 'white' : 'black'}}><InventoryIcon fontSize="small" />Product Activity</Typography>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>Recent Sales</Typography>
               {relatedSales.length > 0 ? relatedSales.slice(0, 3).map(sale => (
                 <Box key={sale._id} sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -548,7 +550,7 @@ const AdminProductProfile = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <Paper elevation={3} sx={{ p: 2, background: 'linear-gradient(135deg, #e8f5e8 0%, #a5d6a7 100%)', borderRadius: 3 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom sx={{display:'flex',alignItems:'center',gap:1}}><PeopleIcon fontSize="small" />Top Customers</Typography>
+              <Typography variant="h6" fontWeight={700} gutterBottom sx={{display:'flex',alignItems:'center',gap:1, color: darkMode ? 'white' : 'black'}}><PeopleIcon fontSize="small" />Top Customers</Typography>
               {topCustomers.length > 0 ? topCustomers.map(c => (
                 <Box key={c.name} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <PeopleIcon sx={{ mr: 1 }} />
@@ -560,7 +562,7 @@ const AdminProductProfile = () => {
         </Grid>
         {insights.length > 0 && (
           <Paper elevation={3} sx={{ p: 2, mt: 4, background: 'linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%)', borderRadius: 3 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom>Product Insights</Typography>
+            <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: darkMode ? 'white' : 'black' }}>Product Insights</Typography>
             <ul>
               {insights.map((i, idx) => (
                 <li key={idx}><Typography variant="body2">{i}</Typography></li>
@@ -572,7 +574,7 @@ const AdminProductProfile = () => {
         <Dialog fullWidth maxWidth="md" fullScreen={isSm} open={activityOpen} onClose={() => setActivityOpen(false)}>
           <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box>
-              <Typography variant="h6">Product Activity & Charts</Typography>
+              <Typography variant="h6" sx={{ color: darkMode ? 'white' : 'black' }}>Product Activity & Charts</Typography>
               <Typography variant="body2" color="text.secondary">{product?.name}</Typography>
             </Box>
             <IconButton onClick={() => setActivityOpen(false)} size="small">

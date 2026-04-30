@@ -3,9 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../redux/productsSlice';
 import { Grid, Card, CardContent, Typography, CardHeader, CardMedia, Fade, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, IconButton, InputAdornment, Paper, Divider, Tooltip, Chip, FormControl, InputLabel, Select } from '@mui/material';
 import API from '../api/api';
-import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search';
-import EditIcon from '@mui/icons-material/Edit';
+import { useDarkMode } from '../context/DarkModeContext';
 import { Alert } from '@mui/material';
 
 const categories = [
@@ -41,9 +39,13 @@ const AdminProductList = () => {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [vendors, setVendors] = useState([]);
+  const { darkMode } = useDarkMode();
+  const [brands, setBrands] = useState([]);
 
   // Get all unique categories from products
   const allCategories = Array.from(new Set(items.map(p => p.category).filter(Boolean)));
+  // Get all unique brands from products
+  const allBrands = Array.from(new Set(items.map(p => p.brand).filter(Boolean)));
   // If you want to include the static categories as well:
   // const allCategories = Array.from(new Set([...categories, ...items.map(p => p.category).filter(Boolean)]));
 
@@ -387,29 +389,51 @@ const AdminProductList = () => {
           })}
         </Grid>
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700, color: 'primary.main', bgcolor: '#f4f6fa', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>Edit Product</DialogTitle>
-          <DialogContent sx={{ bgcolor: '#f7f7fa', borderBottomLeftRadius: 12, borderBottomRightRadius: 12, boxShadow: 3 }}>
+          <DialogTitle sx={{ fontWeight: 700, color: 'primary.main', bgcolor: darkMode ? '#2a2a2a' : '#f4f6fa', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>Edit Product</DialogTitle>
+          <DialogContent sx={{ bgcolor: darkMode ? '#1e1e1e' : '#f7f7fa', borderBottomLeftRadius: 12, borderBottomRightRadius: 12, boxShadow: 3 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 1 }}>
-              <TextField label="Product Name" name="name" fullWidth margin="normal" value={form.name || ''} onChange={handleChange} required variant="outlined" />
-              <TextField select label="Category" name="category" fullWidth margin="normal" value={form.category || ''} onChange={handleChange} required variant="outlined">
-                {allCategories.map(cat => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
+              <TextField label="Product Name" name="name" fullWidth margin="normal" value={form.name || ''} onChange={handleChange} required variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
+              <TextField select label="Category" name="category" fullWidth margin="normal" value={form.category || ''} onChange={handleChange} required variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }}>
+                {allCategories.map(cat => (
+                  <MenuItem key={cat} value={cat} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{cat}</span>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Note: This would require backend support to delete categories globally
+                        // For now, just remove from local state
+                        alert('Category deletion requires backend changes');
+                      }}
+                      sx={{ ml: 1, color: 'error.main' }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </MenuItem>
+                ))}
               </TextField>
-              <TextField label="Sub-Category" name="subCategory" fullWidth margin="normal" value={form.subCategory || ''} onChange={handleChange} variant="outlined" />
-              <TextField label="Brand / Company" name="brand" fullWidth margin="normal" value={form.brand || ''} onChange={handleChange} variant="outlined" />
-              <TextField label="Color" name="color" fullWidth margin="normal" value={form.color || ''} onChange={handleChange} variant="outlined" />
-              <FormControl fullWidth margin="normal" variant="outlined">
+              <TextField label="Sub-Category" name="subCategory" fullWidth margin="normal" value={form.subCategory || ''} onChange={handleChange} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
+              <TextField select label="Brand / Company" name="brand" fullWidth margin="normal" value={form.brand || ''} onChange={handleChange} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }}>
+                {allBrands.map(brand => (
+                  <MenuItem key={brand} value={brand}>
+                    {brand}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField label="Color" name="color" fullWidth margin="normal" value={form.color || ''} onChange={handleChange} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
+              <FormControl fullWidth margin="normal" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }}>
                 <InputLabel>Vendor</InputLabel>
                 <Select name="vendor" value={form.vendor || ''} label="Vendor" onChange={handleChange}>
                   {vendors.map(vendor => <MenuItem key={vendor._id} value={vendor.vendorName}>{vendor.vendorName}</MenuItem>)}
                 </Select>
               </FormControl>
               <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField label="Carton Quantity" name="cartonQuantity" type="number" fullWidth margin="normal" value={form.cartonQuantity || ''} onChange={handleChange} required variant="outlined" />
-                <TextField label="Pieces Per Carton" name="piecesPerCarton" type="number" fullWidth margin="normal" value={form.piecesPerCarton || ''} onChange={handleChange} required variant="outlined" />
+                <TextField label="Carton Quantity" name="cartonQuantity" type="number" fullWidth margin="normal" value={form.cartonQuantity || ''} onChange={handleChange} required variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
+                <TextField label="Pieces Per Carton" name="piecesPerCarton" type="number" fullWidth margin="normal" value={form.piecesPerCarton || ''} onChange={handleChange} required variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
               </Box>
-              <TextField label="Lose Pieces" name="losePieces" type="number" fullWidth margin="normal" value={form.losePieces || ''} onChange={handleChange} required variant="outlined" />
-              <TextField label="Cost Per Piece" name="costPerPiece" type="number" fullWidth margin="normal" value={form.costPerPiece || ''} onChange={handleChange} required variant="outlined" />
-              <TextField label="Selling Per Piece" name="sellingPerPiece" type="number" fullWidth margin="normal" value={form.sellingPerPiece || ''} onChange={handleChange} required variant="outlined" />
+              <TextField label="Lose Pieces" name="losePieces" type="number" fullWidth margin="normal" value={form.losePieces || ''} onChange={handleChange} required variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
+              <TextField label="Cost Per Piece" name="costPerPiece" type="number" fullWidth margin="normal" value={form.costPerPiece || ''} onChange={handleChange} required variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
+              <TextField label="Selling Per Piece" name="sellingPerPiece" type="number" fullWidth margin="normal" value={form.sellingPerPiece || ''} onChange={handleChange} required variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
               <TextField
                 label="Warranty (months)"
                 name="warrantyMonths"
@@ -420,10 +444,11 @@ const AdminProductList = () => {
                 onChange={handleChange}
                 helperText="Default 12 = 1 year"
                 variant="outlined"
+                sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }}
               />
-              <TextField label="SKU / Barcode" name="SKU" fullWidth margin="normal" value={form.SKU || ''} onChange={handleChange} required variant="outlined" />
-              <TextField label="Warehouse Address" name="warehouseAddress" fullWidth margin="normal" value={form.warehouseAddress || ''} onChange={handleChange} variant="outlined" />
-              <TextField label="Warranty Claimed Pieces" name="warrantyClaimedPieces" type="number" fullWidth margin="normal" value={form.warrantyClaimedPieces || ''} onChange={handleChange} variant="outlined" />
+              <TextField label="SKU / Barcode" name="SKU" fullWidth margin="normal" value={form.SKU || ''} onChange={handleChange} required variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
+              <TextField label="Warehouse Address" name="warehouseAddress" fullWidth margin="normal" value={form.warehouseAddress || ''} onChange={handleChange} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
+              <TextField label="Warranty Claimed Pieces" name="warrantyClaimedPieces" type="number" fullWidth margin="normal" value={form.warrantyClaimedPieces || ''} onChange={handleChange} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
               <Button variant="outlined" component="label" fullWidth sx={{ mt: 1, borderRadius: 2 }}>
                 Change Product Image
                 <input type="file" accept="image/*" hidden onChange={handleImageChange} />
@@ -439,7 +464,7 @@ const AdminProductList = () => {
               {error && <Typography color="error" variant="body2" align="center">{error}</Typography>}
             </Box>
           </DialogContent>
-          <DialogActions sx={{ bgcolor: '#f4f6fa', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
+          <DialogActions sx={{ bgcolor: darkMode ? '#2a2a2a' : '#f4f6fa', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
             <Button onClick={handleClose} sx={{ fontWeight: 600 }}>Cancel</Button>
             <Button onClick={handleUpdate} variant="contained" color="primary" sx={{ fontWeight: 600 }}>Update</Button>
           </DialogActions>

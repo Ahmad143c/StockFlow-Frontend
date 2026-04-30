@@ -1645,7 +1645,10 @@ const AdminPurchaseReport = () => {
     const formData = new FormData();
     formData.append('image', file);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/upload`, {
+      const rawApiUrl = import.meta.env.VITE_API_URL || '';
+      const trimmedApiUrl = rawApiUrl.replace(/\/$/, '');
+      const apiRoot = trimmedApiUrl ? (trimmedApiUrl.endsWith('/api') ? trimmedApiUrl : `${trimmedApiUrl}/api`) : '/api';
+      const response = await fetch(`${apiRoot}/upload`, {
         method:  'POST',
         body:    formData,
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -2895,6 +2898,28 @@ const AdminPurchaseReport = () => {
             >
               Print Report
             </Button>
+
+            <Tooltip title="Preview PDF">
+              <IconButton
+                onClick={() => {
+                  // Generate and preview PDF
+                  const pdfData = generatePDF(filteredOrders);
+                  // For preview, we can open in new tab or show in dialog
+                  // Since jsPDF generates blob, we can create object URL
+                  const pdfBlob = pdfData.output('blob');
+                  const pdfUrl = URL.createObjectURL(pdfBlob);
+                  window.open(pdfUrl, '_blank');
+                }}
+                sx={{
+                  color: darkMode ? '#90caf9' : '#1976d2',
+                  '&:hover': {
+                    backgroundColor: darkMode ? 'rgba(144,202,249,0.1)' : 'rgba(25,118,210,0.1)',
+                  },
+                }}
+              >
+                <PictureAsPdfIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
 
           {/* ── Table ── */}
@@ -2973,7 +2998,11 @@ const AdminPurchaseReport = () => {
                       sx={{
                         ...(isHighlighted ? {
                           animation: 'blinkBg 1s linear infinite',
-                          '@keyframes blinkBg': {
+                          '@keyframes blinkBg': darkMode ? {
+                            '0%':   { backgroundColor: '#1b3a4b' },
+                            '50%':  { backgroundColor: '#0277bd' },
+                            '100%': { backgroundColor: '#1b3a4b' },
+                          } : {
                             '0%':   { backgroundColor: '#fffde7' },
                             '50%':  { backgroundColor: '#fff59d' },
                             '100%': { backgroundColor: '#fffde7' },

@@ -30,6 +30,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
+import DeleteIcon from '@mui/icons-material/Delete';
 import API from '../api/api';
 import { useDarkMode } from '../context/DarkModeContext';
 
@@ -68,6 +69,7 @@ const AddProduct = ({ onCategoryAdded }) => {
     const savedCategories = localStorage.getItem('productCategories');
     return savedCategories ? JSON.parse(savedCategories) : defaultCategories;
   });
+  const [brands, setBrands] = useState([]);
   const [addCatOpen, setAddCatOpen] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const [vendors, setVendors] = useState([]);
@@ -84,11 +86,12 @@ const AddProduct = ({ onCategoryAdded }) => {
         });
         setVendors(vendorsRes.data);
         
-        // Fetch products to get existing categories
+        // Fetch products to get existing categories and brands
         const productsRes = await API.get('/products', {
           headers: { Authorization: `Bearer ${token}` }
         });
         const productCategories = Array.from(new Set(productsRes.data.map(p => p.category).filter(Boolean)));
+        const productBrands = Array.from(new Set(productsRes.data.map(p => p.brand).filter(Boolean)));
         
         // Get saved categories from localStorage
         const savedCategories = localStorage.getItem('productCategories');
@@ -102,6 +105,7 @@ const AddProduct = ({ onCategoryAdded }) => {
         ]));
         
         setCategories(allCategories);
+        setBrands(productBrands);
         
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -362,8 +366,22 @@ const AddProduct = ({ onCategoryAdded }) => {
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                           >
                             {categories.map((cat) => (
-                              <MenuItem key={cat} value={cat}>
-                                {cat}
+                              <MenuItem key={cat} value={cat} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>{cat}</span>
+                                {!defaultCategories.includes(cat) && (
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const updatedCategories = categories.filter(c => c !== cat);
+                                      setCategories(updatedCategories);
+                                      localStorage.setItem('productCategories', JSON.stringify(updatedCategories));
+                                    }}
+                                    sx={{ ml: 1, color: 'error.main' }}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                )}
                               </MenuItem>
                             ))}
                             <MenuItem
@@ -394,6 +412,7 @@ const AddProduct = ({ onCategoryAdded }) => {
                         </Grid>
                         <Grid item xs={12} md={6}>
                           <TextField
+                            select
                             label="Brand / Company"
                             name="brand"
                             fullWidth
@@ -408,7 +427,13 @@ const AddProduct = ({ onCategoryAdded }) => {
                               )
                             }}
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                          />
+                          >
+                            {brands.map((brand) => (
+                              <MenuItem key={brand} value={brand}>
+                                {brand}
+                              </MenuItem>
+                            ))}
+                          </TextField>
                         </Grid>
                         <Grid item xs={12} md={6}>
                           <TextField

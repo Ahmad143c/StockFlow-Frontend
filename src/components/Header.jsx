@@ -148,16 +148,17 @@ const Header = ({ darkMode = false, setDarkMode = () => {}, user, handleLogout }
     let pollingInterval;
     let warrantyPollingInterval;
     let refundPollingInterval;
+    const rawApiUrl = import.meta.env.VITE_API_URL || '';
+    const trimmedApiUrl = rawApiUrl.replace(/\/$/, '');
+    const apiRoot = trimmedApiUrl ? (trimmedApiUrl.endsWith('/api') ? trimmedApiUrl : `${trimmedApiUrl}/api`) : '/api';
     if (user && user.role === 'admin') {
-      const API_URL = import.meta.env.VITE_API_URL || '';
-      
       const fetchNewSales = async () => {
         try {
           const token = localStorage.getItem('token');
           // Read current timestamp from localStorage to avoid stale closure
           const currentLastTimestamp = Number(localStorage.getItem('sales:lastTimestamp') || 0);
           
-          const response = await axios.get(`${API_URL}/api/sales`, {
+          const response = await axios.get(`${apiRoot}/sales`, {
             headers: { Authorization: `Bearer ${token}` },
             params: { limit: 10 }
           });
@@ -218,11 +219,10 @@ const Header = ({ darkMode = false, setDarkMode = () => {}, user, handleLogout }
 
     // Polling for warranty notifications (for admins only)
     if (user && user.role === 'admin') {
-      const API_URL = import.meta.env.VITE_API_URL || '';
       const fetchWarrantyClaims = async () => {
         try {
           const token = localStorage.getItem('token');
-          const response = await axios.get(`${API_URL}/api/sales/warranty/recent`, {
+          const response = await axios.get(`${apiRoot}/sales/warranty/recent`, {
             headers: { Authorization: `Bearer ${token}` },
             params: { limit: 10 }
           });
@@ -260,11 +260,10 @@ const Header = ({ darkMode = false, setDarkMode = () => {}, user, handleLogout }
 
     // Polling for refund notifications (for admins only)
     if (user && user.role === 'admin') {
-      const API_URL = import.meta.env.VITE_API_URL || '';
       const fetchRefunds = async () => {
         try {
           const token = localStorage.getItem('token');
-          const response = await axios.get(`${API_URL}/api/sales/refunds/recent`, {
+          const response = await axios.get(`${apiRoot}/sales/refunds/recent`, {
             headers: { Authorization: `Bearer ${token}` },
             params: { limit: 10 }
           });
