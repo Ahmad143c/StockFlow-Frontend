@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../redux/productsSlice';
-import { Grid, Card, CardContent, Typography, CardHeader, CardMedia, Fade, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, IconButton, InputAdornment, Paper, Divider, Tooltip, Chip, FormControl, InputLabel, Select } from '@mui/material';
+import { Grid, Card, CardContent, Typography, CardHeader, CardMedia, Fade, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, InputAdornment, Paper, Divider, Tooltip, Chip, FormControl, InputLabel, Select } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
