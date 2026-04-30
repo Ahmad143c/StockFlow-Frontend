@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../redux/productsSlice';
 import { Grid, Card, CardContent, Typography, CardHeader, CardMedia, Fade, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, IconButton, InputAdornment, Paper, Divider, Tooltip, Chip, FormControl, InputLabel, Select } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import API from '../api/api';
 import { useDarkMode } from '../context/DarkModeContext';
 import { Alert } from '@mui/material';
