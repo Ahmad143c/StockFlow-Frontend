@@ -20,7 +20,8 @@ import {
   Stack,
   Avatar,
   Card,
-  CardContent
+  CardContent,
+  IconButton
 } from '@mui/material';
 import CategoryIcon from '@mui/icons-material/Category';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
