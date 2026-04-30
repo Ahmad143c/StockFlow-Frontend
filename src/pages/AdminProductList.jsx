@@ -4,6 +4,7 @@ import { fetchProducts } from '../redux/productsSlice';
 import { Grid, Card, CardContent, Typography, CardHeader, CardMedia, Fade, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, IconButton, InputAdornment, Paper, Divider, Tooltip, Chip, FormControl, InputLabel, Select } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
+import EditIcon from '@mui/icons-material/Edit';
 import API from '../api/api';
 import { useDarkMode } from '../context/DarkModeContext';
 import { Alert } from '@mui/material';
