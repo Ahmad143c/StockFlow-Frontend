@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../redux/productsSlice';
-import { Grid, Card, CardContent, Typography, CardHeader, CardMedia, Fade, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, InputAdornment, Paper, Divider, Tooltip, Chip, FormControl, InputLabel, Select } from '@mui/material';
+import { Grid, Card, CardContent, Typography, CardHeader, CardMedia, Fade, Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, InputAdornment, Paper, Divider, Tooltip, Chip, FormControl, InputLabel, Select, Autocomplete } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
@@ -163,29 +163,29 @@ const AdminProductList = () => {
   const handleUpdate = async () => {
     try {
       const token = localStorage.getItem('token');
-
+      
       // Check if warrantyClaimedPieces is being reduced, restock the difference
       const oldClaimedPieces = Number(editProduct.warrantyClaimedPieces || 0);
       const newClaimedPieces = Number(form.warrantyClaimedPieces || 0);
       const piecesToRestock = Math.max(0, oldClaimedPieces - newClaimedPieces);
-
+      
       let updatedForm = { ...form };
-
+      
       if (piecesToRestock > 0) {
         const piecesPerCarton = Number(form.piecesPerCarton) || 1;
         const originalTotalPieces = Number(editProduct.totalPieces) || 0;
         const newTotalPieces = originalTotalPieces + piecesToRestock;
-
+        
         let newCartons = Math.floor(newTotalPieces / piecesPerCarton);
         let newLosePieces = newTotalPieces % piecesPerCarton;
         const stockQuantity = newCartons + (newLosePieces > 0 ? 1 : 0);
-
+        
         const costPerPiece = Number(form.costPerPiece) || 0;
         const sellingPerPiece = Number(form.sellingPerPiece) || 0;
         const perPieceProfit = sellingPerPiece - costPerPiece;
         const totalUnitCost = costPerPiece * newTotalPieces;
         const totalUnitProfit = perPieceProfit * newTotalPieces;
-
+        
         updatedForm = {
           ...updatedForm,
           totalPieces: newTotalPieces,
@@ -197,7 +197,7 @@ const AdminProductList = () => {
           totalUnitProfit: totalUnitProfit
         };
       }
-
+      
       await API.put(`/products/${editProduct._id}`, updatedForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -233,7 +233,7 @@ const AdminProductList = () => {
         {/* Analytics */}
         <Grid container spacing={2} sx={{ mb: 3, px: { xs: 1, sm: 1 }, mt: '2px', }}>
           <Grid columns={12}>
-            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', }}>
+            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px',}}>
               <Typography variant="subtitle2" color="text.secondary">Total Products</Typography>
               <Typography variant="h5" color="primary" fontWeight={700}>{formatNum(totalProducts)}</Typography>
             </Paper>
@@ -245,7 +245,7 @@ const AdminProductList = () => {
             </Paper>
           </Grid>
           <Grid columns={12}>
-            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', }}>
+            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px',}}>
               <Typography variant="subtitle2" color="text.secondary">Total Profit</Typography>
               <Typography variant="h5" color="info.main" fontWeight={700}>Rs. {formatNum(Number(totalProfit.toFixed(2)))}</Typography>
             </Paper>
@@ -324,7 +324,7 @@ const AdminProductList = () => {
                         Stock low: {formatNum(totalPieces)} pcs. {reorderLevel ? `Reorder level: ${formatNum(reorderLevel)}.` : ''}
                       </Alert>
                     )}
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {product.subCategory && (
                         <Chip
                           label={product.subCategory}
@@ -333,12 +333,6 @@ const AdminProductList = () => {
                           sx={{ mr: 0.5 }}
                         />
                       )}
-                      <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold', fontSize: '16px'}}>
-                        Total Pieces: {formatNum(totalPieces)}
-                      </Typography>
-                      <Typography variant="body2" color="info.main" sx={{ fontWeight: 'bold', fontSize: '16px'}}>
-                        Stock Quantity: (Cart: {formatNum(displayCartons)}, Lose: {formatNum(displayLosePieces)})
-                      </Typography>
                       <Typography variant="body2" color="text.secondary" component="span">
                         Brand: {product.brand}
                       </Typography>
@@ -360,7 +354,8 @@ const AdminProductList = () => {
                         : 'No Warranty'}
                     </Typography>
                     {/* Selling Per Carton removed */}
-
+                    <Typography variant="body2" color="primary">Total Pieces: {formatNum(totalPieces)}</Typography>
+                    <Typography variant="body2" color="info.main">Stock Quantity: (Cart: {formatNum(displayCartons)}, Lose: {formatNum(displayLosePieces)})</Typography>
                     {Number(product.warrantyClaimedPieces || 0) > 0 && (
                       <Typography variant="body2" color="warning.main">
                         Warranty claimed: {formatNum(Number(product.warrantyClaimedPieces || 0))} pcs
@@ -422,18 +417,28 @@ const AdminProductList = () => {
                 ))}
               </TextField>
               <TextField label="Sub-Category" name="subCategory" fullWidth margin="normal" value={form.subCategory || ''} onChange={handleChange} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
-              <TextField select label="Brand / Company" name="brand" fullWidth margin="normal" value={form.brand || ''} onChange={handleChange} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }}>
-                {allBrands.map(brand => (
-                  <MenuItem key={brand} value={brand}>
-                    {brand}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <Autocomplete
+                freeSolo
+                options={allBrands}
+                inputValue={form.brand || ''}
+                onInputChange={(event, newInputValue) => {
+                  setForm({ ...form, brand: newInputValue });
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Brand / Company"
+                    margin="normal"
+                    variant="outlined"
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }}
+                  />
+                )}
+              />
               <TextField label="Color" name="color" fullWidth margin="normal" value={form.color || ''} onChange={handleChange} variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }} />
               <FormControl fullWidth margin="normal" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { bgcolor: darkMode ? '#333' : 'white' } }}>
                 <InputLabel>Vendor</InputLabel>
                 <Select name="vendor" value={form.vendor || ''} label="Vendor" onChange={handleChange}>
-                  {vendors.map(vendor => <MenuItem key={vendor._id} value={vendor.vendorName}>{vendor.vendorName}</MenuItem>)}
+                  {vendors.map(vendor => <MenuItem key={vendor._id} value={vendor.companyName || vendor.vendorName}>{vendor.companyName || vendor.vendorName}</MenuItem>)}
                 </Select>
               </FormControl>
               <Box sx={{ display: 'flex', gap: 2 }}>

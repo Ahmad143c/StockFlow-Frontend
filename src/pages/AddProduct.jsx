@@ -14,6 +14,7 @@ import {
   Grid,
   InputAdornment,
   CircularProgress,
+  Autocomplete,
   useTheme,
   useMediaQuery,
   Alert,
@@ -412,29 +413,30 @@ const AddProduct = ({ onCategoryAdded }) => {
                           />
                         </Grid>
                         <Grid item xs={12} md={6}>
-                          <TextField
-                            select
-                            label="Brand / Company"
-                            name="brand"
-                            fullWidth
-                            value={form.brand}
-                            onChange={handleChange}
-                            variant="outlined"
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <BrandingWatermarkIcon />
-                                </InputAdornment>
-                              )
+                          <Autocomplete
+                            freeSolo
+                            options={brands}
+                            inputValue={form.brand || ''}
+                            onInputChange={(event, newInputValue) => {
+                              setForm({ ...form, brand: newInputValue });
                             }}
-                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                          >
-                            {brands.map((brand) => (
-                              <MenuItem key={brand} value={brand}>
-                                {brand}
-                              </MenuItem>
-                            ))}
-                          </TextField>
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Brand / Company"
+                                variant="outlined"
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: (
+                                    <InputAdornment position="start">
+                                      <BrandingWatermarkIcon />
+                                    </InputAdornment>
+                                  ),
+                                }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                              />
+                            )}
+                          />
                         </Grid>
                         <Grid item xs={12} md={6}>
                           <TextField
@@ -456,8 +458,8 @@ const AddProduct = ({ onCategoryAdded }) => {
                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                           >
                             {vendors.map((vendor) => (
-                              <MenuItem key={vendor._id} value={vendor.vendorName}>
-                                {vendor.vendorName}
+                              <MenuItem key={vendor._id} value={vendor.companyName || vendor.vendorName}>
+                                {vendor.companyName || vendor.vendorName}
                               </MenuItem>
                             ))}
                           </TextField>
