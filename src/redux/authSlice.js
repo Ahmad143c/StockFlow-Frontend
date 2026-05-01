@@ -3,7 +3,7 @@ import API from '../api/api';
 
 export const loginUser = createAsyncThunk('auth/login', async ({ username, password }, { rejectWithValue }) => {
   try {
-    const res = await API.post('/auth/login', { username, password });
+    const res = await API.post('/api/auth/login', { username, password });
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || 'Login failed');
