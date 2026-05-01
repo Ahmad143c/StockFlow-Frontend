@@ -7,7 +7,7 @@ const isCodespaces = window.location.hostname.includes('.app.github.dev');
 // Otherwise, use environment variable or fallback to Railway backend URL
 const baseURL = isCodespaces
   ? window.location.origin.replace('-3000', '-5000') + '/api'
-  : import.meta.env.REACT_APP_API_URL || 'https://stockflow-backend-production-22de.up.railway.app/api';
+  : import.meta.env.VITE_API_URL || 'https://stockflow-backend-production-22de.up.railway.app/api';
 
 const API = axios.create({
   baseURL,
