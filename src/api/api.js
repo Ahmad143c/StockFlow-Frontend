@@ -4,10 +4,10 @@ import axios from 'axios';
 const isCodespaces = window.location.hostname.includes('.app.github.dev');
 
 // In Codespaces, use the Codespaces URL with port 5000 for backend
-// Otherwise, use proxy or explicit API URL
+// Otherwise, use explicit Railway backend URL
 const baseURL = isCodespaces
   ? window.location.origin.replace('-3000', '-5000') + '/api'
-  : import.meta.env.VITE_API_URL || '/api';
+  : 'https://stockflow-backend-production-22de.up.railway.app/api';
 
 const API = axios.create({
   baseURL,
