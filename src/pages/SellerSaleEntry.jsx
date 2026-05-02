@@ -875,7 +875,7 @@ const SellerSaleEntry = () => {
                             </Select>
                           </FormControl>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={2}>
+                        <Grid item xs={12} sm={6} md={3}>
                           <Autocomplete
                             options={sortedProductsByBrandFor(item.brand, products)}
                             getOptionLabel={(option) => option?.name ? `${option.name} (${option.SKU})` : ''}
