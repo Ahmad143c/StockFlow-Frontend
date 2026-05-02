@@ -28,6 +28,7 @@ import {
   InputAdornment,
   TablePagination,
 } from '@mui/material';
+import ClickTooltip from '../components/ClickTooltip';
 import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
 import PrintIcon from '@mui/icons-material/Print';
@@ -38,7 +39,10 @@ import { useDarkMode } from '../context/DarkModeContext';
 
 const SellerSalesReport = () => {
   const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('xs'));
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMd = useMediaQuery(theme.breakpoints.down('md'));
+  const isLg = useMediaQuery(theme.breakpoints.down('lg'));
   const { darkMode } = useDarkMode();
   const [sales, setSales] = useState([]);
   const [page, setPage] = useState(0);
@@ -473,10 +477,11 @@ const SellerSalesReport = () => {
 
           {/* Search Field */}
           <TextField
-            placeholder="Search Product/Cashier/Customer/Invoice..."
+            placeholder={isXs ? "Search..." : "Search Product/Cashier/Customer/Invoice..."}
             value={search}
             onChange={e => setSearch(e.target.value)}
             fullWidth
+            size={isXs ? "small" : "medium"}
             sx={{
               mb: 2,
               '& .MuiInputBase-root': {
@@ -492,9 +497,10 @@ const SellerSalesReport = () => {
             gridTemplateColumns: {
               xs: '1fr',
               sm: 'repeat(2, 1fr)',
-              md: 'repeat(5, auto)'
+              md: 'repeat(4, auto)',
+              lg: 'repeat(5, auto)'
             },
-            gap: { xs: 1.5, sm: 2 },
+            gap: { xs: 1, sm: 1.5, md: 2 },
             mb: 2,
             alignItems: 'center'
           }}>
@@ -575,9 +581,10 @@ const SellerSalesReport = () => {
               mb: 2,
               width: '100%',
               maxWidth: {
-                xs: 'calc(80vw - 10px)',
-                sm: '100%',
-                md: 'calc(103vw - 300px)'
+                xs: 'calc(95vw - 20px)',
+                sm: 'calc(100vw - 40px)',
+                md: 'calc(100vw - 80px)',
+                lg: 'calc(100vw - 120px)'
               },
               minWidth: 0,
               overflowX: 'auto',
@@ -604,7 +611,7 @@ const SellerSalesReport = () => {
             <Table
               stickyHeader
               sx={{
-                minWidth: { xs: 800, sm: '100%', md: '100%' },
+                minWidth: { xs: 300, sm: 600, md: 800, lg: 1000 },
                 width: '100%',
                 tableLayout: { xs: 'auto', sm: 'auto', md: 'auto' },
                 whiteSpace: { xs: 'nowrap', sm: 'nowrap', md: 'nowrap' },
@@ -635,19 +642,19 @@ const SellerSalesReport = () => {
                     boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)',
                     minWidth: { xs: 50, sm: 120 }
                   }}>Invoice</TableCell>
-                  <TableCell sx={headerCellSx}>Date</TableCell>
-                  <TableCell sx={headerCellSx}>Cashier</TableCell>
-                  <TableCell sx={headerCellSx}>Items</TableCell>
-                  <TableCell sx={headerCellSx}>Item Price</TableCell>
-                  <TableCell sx={headerCellSx}>Customer</TableCell>
-                  <TableCell sx={headerCellSx}>Customer No</TableCell>
-                  <TableCell sx={headerCellSx} align="right">Qty</TableCell>
-                  <TableCell sx={headerCellSx} align="right">Total (Rs)</TableCell>
-                  <TableCell sx={headerCellSx} align="right">Discount (Rs)</TableCell>
-                  <TableCell sx={headerCellSx}>Status</TableCell>
-                  <TableCell sx={headerCellSx} align="center">Warranty</TableCell>
-                  <TableCell sx={headerCellSx} align="center">Invoice</TableCell>
-                  <TableCell sx={headerCellSx}>Actions</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', sm: 'table-cell' } }}>Date</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', md: 'table-cell' } }}>Cashier</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', sm: 'table-cell' } }}>Items</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', md: 'table-cell' } }}>Item Price</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', sm: 'table-cell' } }}>Customer</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', md: 'table-cell' } }}>Customer No</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'table-cell', sm: 'table-cell' } }} align="right">Qty</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'table-cell', sm: 'table-cell' } }} align="right">Total (Rs)</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', sm: 'table-cell' } }} align="right">Discount (Rs)</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', sm: 'table-cell' } }}>Status</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', md: 'table-cell' } }} align="center">Warranty</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'none', sm: 'table-cell' } }} align="center">Invoice</TableCell>
+                  <TableCell sx={{ ...headerCellSx, display: { xs: 'table-cell', sm: 'table-cell' } }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -732,10 +739,10 @@ const SellerSalesReport = () => {
                         boxShadow: '2px 0 5px -2px rgba(0,0,0,0.1)',
                         minWidth: { xs: 50, sm: 120 }
                       }}>{sale.invoiceNumber || (sale._id ? sale._id.substr(-6) : '')}</TableCell>
-                      <TableCell sx={cellSx}>{new Date(sale.createdAt).toLocaleString()}</TableCell>
-                      <TableCell sx={cellSx}>{sale.cashierName || '-'}</TableCell>
-                      <TableCell sx={cellSx}>
-                        <Tooltip
+                      <TableCell sx={{ ...cellSx, display: { xs: 'none', sm: 'table-cell' } }}>{new Date(sale.createdAt).toLocaleString()}</TableCell>
+                      <TableCell sx={{ ...cellSx, display: { xs: 'none', md: 'table-cell' } }}>{sale.cashierName || '-'}</TableCell>
+                      <TableCell sx={{ ...cellSx, display: { xs: 'none', sm: 'table-cell' } }}>
+                        <ClickTooltip
                           title={
                             <Box sx={{ p: 0.5 }}>
                               {sale.items.map(i => {
@@ -755,12 +762,12 @@ const SellerSalesReport = () => {
                           <Chip
                             label={`${sale.items.length} Products`}
                             size="small"
-                            sx={{ cursor: 'pointer', height: 24 }}
+                            sx={{ height: 24 }}
                           />
-                        </Tooltip>
+                        </ClickTooltip>
                       </TableCell>
-                      <TableCell sx={cellSx}>
-                        <Tooltip
+                      <TableCell sx={{ ...cellSx, display: { xs: 'none', md: 'table-cell' } }}>
+                        <ClickTooltip
                           title={
                             <Box sx={{ p: 0.5 }}>
                               {sale.items.map(i => (
@@ -775,12 +782,12 @@ const SellerSalesReport = () => {
                           <Chip
                             label={sale.items.slice(0, 2).map(i => `Rs. ${Number(i.perPiecePrice || 0).toLocaleString()}`).join(', ') + (sale.items.length > 2 ? '...' : '')}
                             size="small"
-                            sx={{ cursor: 'pointer', height: 24 }}
+                            sx={{ height: 24 }}
                           />
-                        </Tooltip>
+                        </ClickTooltip>
                       </TableCell>
-                      <TableCell sx={cellSx}>{sale.customerName || '-'}</TableCell>
-                      <TableCell sx={cellSx}>{sale.customerContact || '-'}</TableCell>
+                      <TableCell sx={{ ...cellSx, display: { xs: 'none', sm: 'table-cell' } }}>{sale.customerName || '-'}</TableCell>
+                      <TableCell sx={{ ...cellSx, display: { xs: 'none', md: 'table-cell' } }}>{sale.customerContact || '-'}</TableCell>
                       <TableCell sx={cellSx} align="right">
                         {sale.items.reduce((sum, item) => {
                           const refundedQty = calculateRefundedQty(sale, item.productId);
@@ -794,10 +801,10 @@ const SellerSalesReport = () => {
                           Rs. {(Number(sale.discountAmount) || 0).toLocaleString()}
                         </Typography>
                       </TableCell>
-                      <TableCell sx={cellSx}>{sale.paymentStatus}</TableCell>
-                      <TableCell sx={cellSx}>
+                      <TableCell sx={{ ...cellSx, display: { xs: 'none', sm: 'table-cell' } }}>{sale.paymentStatus}</TableCell>
+                      <TableCell sx={{ ...cellSx, display: { xs: 'none', md: 'table-cell' } }}>
                         {underWarranty ? (
-                          <Tooltip title={warrantyTooltip} arrow>
+                          <ClickTooltip title={warrantyTooltip} arrow>
                             <Box sx={{ position: 'relative', display: 'inline-block' }}>
                               <Chip
                                 label={`${warrantyUntil.toLocaleDateString()}`}
@@ -832,7 +839,7 @@ const SellerSalesReport = () => {
                                 </Box>
                               )}
                             </Box>
-                          </Tooltip>
+                          </ClickTooltip>
                         ) : (
                           <Chip
                             label="No Warranty"
@@ -846,8 +853,8 @@ const SellerSalesReport = () => {
                           />
                         )}
                       </TableCell>
-                      <TableCell sx={cellSx}>
-                        <Tooltip title="View Invoice">
+                      <TableCell sx={{ ...cellSx, display: { xs: 'none', sm: 'table-cell' } }}>
+                        <ClickTooltip title="View Invoice">
                           <IconButton
                             onClick={() => handleViewInvoice(sale)}
                             size="small"
@@ -855,38 +862,40 @@ const SellerSalesReport = () => {
                           >
                             <ReceiptIcon />
                           </IconButton>
-                        </Tooltip>
+                        </ClickTooltip>
                       </TableCell>
-                      <TableCell sx={cellSx}>
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => {
-                            window.location.href = `/seller/sale-entry?edit=${encodeURIComponent(sale._id)}`;
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => handleRefundClick(sale)}
-                          sx={{
-                            color: darkMode ? '#ef5350' : '#f44336',
-                            '&:hover': {
-                              backgroundColor: darkMode ? 'rgba(239, 83, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                              transform: 'scale(1.1)'
-                            },
-                            transition: 'all 0.3s ease'
-                          }}
-                        >
-                          <MoneyOffIcon fontSize="small" />
-                        </IconButton>
+                      <TableCell sx={{ ...cellSx, display: { xs: 'table-cell', sm: 'table-cell' } }}>
+                        <Box sx={{ display: 'flex', gap: 0.5, flexDirection: { xs: 'column', sm: 'row' } }}>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => {
+                              window.location.href = `/seller/sale-entry?edit=${encodeURIComponent(sale._id)}`;
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleRefundClick(sale)}
+                            sx={{
+                              color: darkMode ? '#ef5350' : '#f44336',
+                              '&:hover': {
+                                backgroundColor: darkMode ? 'rgba(239, 83, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                                transform: 'scale(1.1)'
+                              },
+                              transition: 'all 0.3s ease'
+                            }}
+                          >
+                            <MoneyOffIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   );
                 })}
                 {filteredSales.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={14}>No sales found.</TableCell>
+                    <TableCell colSpan={isXs ? 4 : 14} sx={{ textAlign: 'center', py: 4 }}>No sales found.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
