@@ -765,7 +765,7 @@ const SellerSaleEntry = () => {
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             {/* LEFT COLUMN - Transaction Area */}
-            <Grid item xs={12} md={7}>
+            <Grid item xs={12} md={9}>
               {/* Product Search Bar */}
               <Paper elevation={0} sx={{ p: 1.5, mb: 2, display: 'flex', alignItems: 'center', gap: 1, bgcolor: darkMode ? '#2a2a2a' : '#f5f5f5', borderRadius: 2, border: `1px solid ${darkMode ? '#3a3a3a' : '#e0e0e0'}` }}>
                 <SearchIcon sx={{ color: 'text.secondary', ml: 1 }} />
@@ -846,20 +846,21 @@ const SellerSaleEntry = () => {
                       
                       <Grid container spacing={2}>
                         <Grid item xs={12} sm={6} md={2}>
-                          <TextField
-                            label="SKU / Barcode"
-                            value={item.SKU || ''}
-                            onChange={e => handleItemChange(idx, 'SKU', e.target.value)}
-                            onBlur={e => handleItemChange(idx, 'SKU', e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleItemChange(idx, 'SKU', e.target.value);
-                              }
-                            }}
-                            helperText="Enter SKU or scan barcode to auto-populate product"
-                            fullWidth
-                          />
+                          <Tooltip title="Enter SKU or scan barcode to auto-populate product" arrow>
+                            <TextField
+                              label="SKU / Barcode"
+                              value={item.SKU || ''}
+                              onChange={e => handleItemChange(idx, 'SKU', e.target.value)}
+                              onBlur={e => handleItemChange(idx, 'SKU', e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleItemChange(idx, 'SKU', e.target.value);
+                                }
+                              }}
+                              fullWidth
+                            />
+                          </Tooltip>
                         </Grid>
                         <Grid item xs={12} sm={6} md={2}>
                           <FormControl fullWidth>
@@ -1024,7 +1025,7 @@ const SellerSaleEntry = () => {
             </Grid>
 
             {/* RIGHT COLUMN - Summary & Payment */}
-            <Grid item xs={12} md={5}>
+            <Grid item xs={12} md={3}>
               <Box sx={{ position: { md: 'sticky' }, top: { md: 80 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
                 {/* Cart Summary Card */}
