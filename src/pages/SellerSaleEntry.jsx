@@ -4,7 +4,7 @@ import { fetchProducts } from '../redux/productsSlice';
 import API from '../api/api';
 import { useDarkMode } from '../context/DarkModeContext';
 import {
-  Box, Paper, Typography, TextField, Button, MenuItem, FormControl, InputLabel, Select, Divider, List, ListItem, ListItemText, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, Chip, Grid, InputAdornment, Tooltip, Checkbox, FormControlLabel, useTheme, useMediaQuery
+  Box, Paper, Typography, TextField, Button, MenuItem, FormControl, InputLabel, Select, Divider, List, ListItem, ListItemText, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, Chip, Grid, InputAdornment, Tooltip, Checkbox, FormControlLabel, useTheme, useMediaQuery, Table, TableHead, TableBody, TableRow, TableCell, Badge, Fab, Collapse, Card, CardContent, Stack, Slide, Grow
 } from '@mui/material';
 
 import EditIcon from '@mui/icons-material/Edit';
@@ -13,11 +13,24 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import EmailIcon from '@mui/icons-material/Email';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import SearchIcon from '@mui/icons-material/Search';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import PaymentsIcon from '@mui/icons-material/Payments';
+import ShieldIcon from '@mui/icons-material/Shield';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
+import PersonIcon from '@mui/icons-material/Person';
+import SaveIcon from '@mui/icons-material/Save';
 import { generateInvoiceHTML } from '../utils/invoiceUtils';
 
 const SellerSaleEntry = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const [products, setProducts] = useState([]);
   const [items, setItems] = useState([
     { productId: '', productName: '', SKU: '', brand: '', quantity: 0, perPiecePrice: 0, discount: 0, subtotal: 0 }
@@ -722,39 +735,73 @@ const SellerSaleEntry = () => {
   return (
     <Box sx={{ mx: 'auto', px: { md: 2 }, mb: 4 }}>
       <Paper elevation={8} sx={{ p: 2, borderRadius: 3, background: darkMode ? 'linear-gradient(to bottom, #1e1e1e 0%, #121212 100%)' : 'linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%)' }}>
-        <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 3, pb: 2, borderBottom: `2px solid ${darkMode ? '#2a2a2a' : '#e0e0e0'}` }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, pb: 2, borderBottom: `2px solid ${darkMode ? '#2a2a2a' : '#e0e0e0'}` }}>
           <Box>
-            <Typography variant="h4" color="primary" sx={{ fontWeight: 700, mb: 0.5 }}>Point of Sale</Typography>
+            <Typography variant="h4" color="primary" sx={{ fontWeight: 700, mb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PointOfSaleIcon sx={{ fontSize: 36 }} /> Point of Sale
+            </Typography>
             <Typography variant="body2" color="text.secondary">Stock updates instantly after saving. Recent sales show below.</Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ textAlign: 'right', p: 2, bgcolor: 'primary.main', borderRadius: 2, color: 'white' }}>
-              <Typography variant="overline" sx={{ display: 'block', opacity: 0.9 }}>Total Amount</Typography>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>Rs. {netAmount.toLocaleString()}</Typography>
+            <Box sx={{ textAlign: 'right', p: 2, bgcolor: 'primary.main', borderRadius: 2, color: 'white', background: darkMode ? 'linear-gradient(135deg, #1565c0 0%, #1976d2 100%)' : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)' }}>
+              <Typography variant="overline" sx={{ display: 'block', opacity: 0.9, letterSpacing: 1 }}>Total Amount</Typography>
+              <Typography variant="h4" sx={{ fontWeight: 800, fontFeatureSettings: '"tnum"' }}>Rs. {netAmount.toLocaleString()}</Typography>
             </Box>
           </Box>
         </Box>
 
         {error && (
-          <Box sx={{ mb: 2, p: 2, bgcolor: darkMode ? '#3d2423' : '#ffebee', borderRadius: 1, border: `1px solid ${darkMode ? '#d32f2f' : '#ef5350'}` }}>
-            <Typography color="error">{error}</Typography>
+          <Box sx={{ mb: 2, p: 2, bgcolor: darkMode ? '#3d2423' : '#ffebee', borderRadius: 2, borderLeft: `4px solid #d32f2f` }}>
+            <Typography color="error" sx={{ fontWeight: 500 }}>{error}</Typography>
           </Box>
         )}
         {success && (
-          <Box sx={{ mb: 2, p: 2, bgcolor: darkMode ? '#1b5e20' : '#e8f5e9', borderRadius: 1, border: `1px solid ${darkMode ? '#388e3c' : '#4caf50'}` }}>
-            <Typography color="success.main">{success}</Typography>
+          <Box sx={{ mb: 2, p: 2, bgcolor: darkMode ? '#1b5e20' : '#e8f5e9', borderRadius: 2, borderLeft: `4px solid #4caf50` }}>
+            <Typography color="success.main" sx={{ fontWeight: 500 }}>{success}</Typography>
           </Box>
         )}
 
         <form onSubmit={handleSubmit}>
-          <Grid container>
-            {/* Items Section */}
-            <Grid item xs={12} sx={{ display: 'flex' }}>
-              <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="h6" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
-                  Sale Items
-                </Typography>
+          <Grid container spacing={3}>
+            {/* LEFT COLUMN - Transaction Area */}
+            <Grid item xs={12} md={7}>
+              {/* Product Search Bar */}
+              <Paper elevation={0} sx={{ p: 1.5, mb: 2, display: 'flex', alignItems: 'center', gap: 1, bgcolor: darkMode ? '#2a2a2a' : '#f5f5f5', borderRadius: 2, border: `1px solid ${darkMode ? '#3a3a3a' : '#e0e0e0'}` }}>
+                <SearchIcon sx={{ color: 'text.secondary', ml: 1 }} />
+                <Autocomplete
+                  options={products}
+                  getOptionLabel={(option) => option?.name ? `${option.name} (${option.SKU})` : ''}
+                  onChange={(_, val) => {
+                    if (val) {
+                      const emptyIdx = items.findIndex(i => !i.productId);
+                      if (emptyIdx !== -1) {
+                        handleItemChange(emptyIdx, 'productId', val._id);
+                      } else {
+                        addItem();
+                        setTimeout(() => handleItemChange(items.length, 'productId', val._id), 50);
+                      }
+                    }
+                  }}
+                  renderInput={(params) => <TextField {...params} placeholder="Quick search — type product name or scan barcode..." variant="standard" fullWidth />}
+                  sx={{ flex: 1 }}
+                />
+              </Paper>
+
+              {/* Cart Items */}
+              <Paper elevation={3} sx={{ p: 2, width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <ShoppingCartIcon /> Sale Items
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Tooltip title="Clear Cart">
+                      <IconButton size="small" onClick={() => setItems([{ productId: '', productName: '', SKU: '', brand: '', quantity: 0, perPiecePrice: 0, discount: 0, subtotal: 0 }])} disabled={items.length <= 1}>
+                        <ClearAllIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
 
                 {items.map((item, idx) => {
                   const prod = item.productId ? products.find(p => p._id === item.productId) : null;
@@ -772,15 +819,29 @@ const SellerSaleEntry = () => {
                     d.setMonth(d.getMonth() + warrantyMonths);
                     warrantyExpiry = d;
                   }
+                  // Stock indicator color
+                  const stockColor = totalPcs === 0 ? '#d32f2f' : totalPcs <= 10 ? '#ed6c02' : '#2e7d32';
                   return (
-                    <Box key={idx} sx={{ mb: 3, p: 1, border: `1px solid ${darkMode ? '#2a2a2a' : '#e0e0e0'}`, borderRadius: 2, bgcolor: darkMode ? '#1e1e1e' : '#ffffff' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                        <Chip label={`Item ${idx + 1}`} size="small" color="primary" />
-                        {itemSubtotal > 0 && (
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                            Subtotal: Rs. {itemSubtotal.toLocaleString()}
-                          </Typography>
-                        )}
+                    <Card key={idx} elevation={2} sx={{ mb: 2, borderRadius: 2, border: `1px solid ${darkMode ? '#333' : '#e0e0e0'}`, bgcolor: darkMode ? '#1e1e1e' : '#ffffff', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 4 } }}>
+                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip label={`#${idx + 1}`} size="small" sx={{ bgcolor: 'primary.main', color: 'white', fontWeight: 600 }} />
+                          {prod && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: stockColor }} />}
+                          {prod && warrantyMonths > 0 && warrantyExpiry && (
+                            <Chip icon={<ShieldIcon sx={{ fontSize: 14 }} />} label={warrantyMonths >= 12 ? `${(warrantyMonths / 12).toFixed(1).replace(/\.0$/, '')}Y` : `${warrantyMonths}M`} size="small" color="success" sx={{ height: 22, fontSize: '0.7rem' }} />
+                          )}
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {itemSubtotal > 0 && (
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'success.main', fontFeatureSettings: '"tnum"' }}>
+                              Rs. {itemSubtotal.toLocaleString()}
+                            </Typography>
+                          )}
+                          <IconButton size="small" color="error" onClick={() => removeItem(idx)} disabled={items.length === 1} sx={{ ml: 0.5 }}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
                       </Box>
                       
                       <Grid container spacing={2}>
@@ -930,226 +991,184 @@ const SellerSaleEntry = () => {
                           />
 
                         </Grid>
-                        <Grid item xs={12} sm={6} md={1}>
-                          <Button
-                            color="error"
-                            variant="outlined"
-                            onClick={() => removeItem(idx)}
-                            disabled={items.length === 1}
-                            sx={{ minWidth: 0, width: '100%', height: '56px' }}
-                          >
-                            ×
-                          </Button>
-                        </Grid>
                         {prod && (
                           <Grid item xs={12} >
-                            <Box sx={{ p: 1.5, mt: 1, ml: 1.5, bgcolor: darkMode ? '#1a3a52' : '#e3f2fd', borderRadius: 1 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
-                                📦 Stock: Total Pieces {totalPcs} (Cart: {ppc > 0 ? Math.floor(totalPcs / ppc) : 0}, Lose: {ppc > 0 ? (totalPcs % ppc) : totalPcs})
-                                {qty > 0 && ` → After Sale: Remaining ${remaining} (Cart: ${ppc > 0 ? Math.floor(remaining / ppc) : 0}, Lose: ${ppc > 0 ? (remaining % ppc) : remaining})`}
+                            <Box sx={{ p: 1, mt: 0.5, bgcolor: darkMode ? '#1a3a52' : '#e3f2fd', borderRadius: 1, borderLeft: `3px solid ${stockColor}` }}>
+                              <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Inventory2Icon sx={{ fontSize: 14 }} /> Stock: {totalPcs} pcs (Cart: {ppc > 0 ? Math.floor(totalPcs / ppc) : 0}, Lose: {ppc > 0 ? (totalPcs % ppc) : totalPcs})
+                                {qty > 0 && ` → After Sale: ${remaining} pcs`}
                               </Typography>
                               {warrantyMonths > 0 && warrantyExpiry && (
-                                <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
-                                  🛡 Warranty:{' '}
-                                  {warrantyMonths >= 12
-                                    ? `${(warrantyMonths / 12).toFixed(1).replace(/\.0$/, '')} Year(s)`
-                                    : `${warrantyMonths} Month(s)`}{' '}
-                                  (Valid until {warrantyExpiry.toLocaleDateString()})
-                                </Typography>
-                              )}
-                              {warrantyMonths <= 0 && (
-                                <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
-                                  🛡 Warranty: No Warranty
+                                <Typography variant="body2" sx={{ mt: 0.5, color: 'success.main', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <ShieldIcon sx={{ fontSize: 14 }} /> Warranty: {warrantyMonths >= 12 ? `${(warrantyMonths / 12).toFixed(1).replace(/\.0$/, '')} Year(s)` : `${warrantyMonths} Month(s)`} (until {warrantyExpiry.toLocaleDateString()})
                                 </Typography>
                               )}
                             </Box>
                           </Grid>
                         )}
                       </Grid>
-                    </Box>
+                      </CardContent>
+                    </Card>
                   );
                 })}
                 <Button
                   variant="outlined"
                   onClick={addItem}
-                  sx={{ mt: 2, width: '100%', py: 1.5 }}
+                  startIcon={<AddIcon />}
+                  sx={{ mt: 1, width: '100%', py: 1.5, borderRadius: 2, borderStyle: 'dashed' }}
                   color="primary"
                 >
-                  + Add Product
+                  Add Product
                 </Button>
               </Paper>
             </Grid>
 
-            {/* Customer Information Section */}
-            <Grid item xs={12} my={3}>
-              <Paper elevation={3} sx={{ p: 3, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="h6" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
-                  Customer Information
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={2}>
-                    <Autocomplete
-                      freeSolo
-                      options={cashiers}
-                      value={cashierName || ''}
-                      onChange={(_, val) => setCashierName(val || '')}
-                      onInputChange={(_, val) => setCashierName(val || '')}
-                      renderInput={(params) => <TextField {...params} label="Cashier Name" fullWidth required />}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={2}>
-                    <Autocomplete
-                      freeSolo
-                      options={customers.map(c => c.name)}
-                      value={customerName || ''}
-                      onChange={(_, val) => {
-                        const name = val || '';
-                        setCustomerName(name);
-                        if (!name) {
-                          setCustomerContact(''); setCustomerEmail('');
-                          return;
-                        }
-                        const found = customers.find(c => c.name.toLowerCase() === name.toLowerCase());
-                        if (found) {
-                          setCustomerContact(found.contact || '');
-                          setCustomerEmail(found.email || '');
-                        }
-                      }}
-                      onInputChange={(_, val, reason) => {
-                        setCustomerName(val || '');
-                        if (!val) { setCustomerContact(''); setCustomerEmail(''); return; }
-                        const found = customers.find(c => c.name.toLowerCase() === val.toLowerCase());
-                        if (found) { setCustomerContact(found.contact || ''); setCustomerEmail(found.email || ''); }
-                      }}
-                      renderInput={(params) => <TextField {...params} label="Customer Name" fullWidth />}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <TextField
-                      label="Customer Contact"
-                      value={customerContact ?? ''}
-                      onChange={e => setCustomerContact(e.target.value)}
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <TextField
-                      label="Customer Email"
-                      type="email"
-                      value={customerEmail ?? ''}
-                      onChange={e => setCustomerEmail(e.target.value)}
-                      fullWidth
-                    />
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
-            {/* Payment Information Section */}
-            <Grid item xs={12} my={3}>
-              <Paper elevation={3} sx={{ p: 3, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="h6" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
-                  Payment Information
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6} md={2}>
-                    <FormControl fullWidth>
-                      <InputLabel>Payment Method</InputLabel>
-                      <Select
-                        value={paymentMethod}
-                        onChange={e => setPaymentMethod(e.target.value)}
-                        label="Payment Method"
-                      >
-                        <MenuItem value="Cash">Cash</MenuItem>
-                        <MenuItem value="Jazzcash">Jazzcash</MenuItem>
-                        <MenuItem value="Bank transfer">Bank transfer</MenuItem>
-                        <MenuItem value="Easypaisa">Easypaisa</MenuItem>
-                        <MenuItem value="Cheque">Cheque</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={2}>
-                    <FormControl fullWidth>
-                      <InputLabel>Payment Status</InputLabel>
-                      <Select
-                        value={paymentStatus}
-                        onChange={e => setPaymentStatus(e.target.value)}
-                        label="Payment Status"
-                      >
-                        <MenuItem value="Paid">Paid</MenuItem>
-                        <MenuItem value="Credit">Credit</MenuItem>
-                        <MenuItem value="Partial Paid">Partial Paid</MenuItem>
-                        <MenuItem value="Unpaid">Unpaid</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  
-                  {paymentStatus === 'Partial Paid' ? (
-                    <>
-                      <Grid item xs={12} sm={6} md={3}>
-                        <TextField
-                          label="Received Payment"
-                          type="number"
-                          value={receivedAmount || ''}
-                          onChange={(e) => setReceivedAmount(e.target.value)}
-                          fullWidth
-                          InputProps={{
-                            inputProps: {
-                              onWheel: (e) => e.target.blur(), // 👈 prevents scroll value change
-                              min: 0,
-                            },
-                          }}
-                          sx={{
-                            '& input[type=number]': {
-                              MozAppearance: 'textfield',
-                              '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                                WebkitAppearance: 'none',
-                                margin: 0,
-                              },
-                            },
-                          }}
-                        />
+            {/* RIGHT COLUMN - Summary & Payment */}
+            <Grid item xs={12} md={5}>
+              <Box sx={{ position: { md: 'sticky' }, top: { md: 80 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-                      </Grid>
-                      <Grid item xs={12} sm={6} md={2}>
-                        <TextField
-                          label="Remaining Payment"
-                          value={(Math.max(0, netAmount - (Number(receivedAmount) || 0))).toLocaleString()}
-                          InputProps={{ readOnly: true }}
-                          fullWidth
-                        />
-                      </Grid>
-                    </>
-                  ) : paymentStatus === 'Credit' ? (
-                    <Grid item xs={12} sm={6} md={4}>
-                      <TextField
-                        label="Due Date"
-                        type="date"
-                        value={dueDate}
-                        onChange={e => setDueDate(e.target.value)}
-                        fullWidth
-                        InputLabelProps={{ shrink: true }}
+                {/* Cart Summary Card */}
+                <Paper elevation={3} sx={{ p: 2.5, borderRadius: 3, background: darkMode ? 'linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%)' : 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)' }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PointOfSaleIcon /> Cart Summary
+                  </Typography>
+                  <Stack spacing={1.5}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">Total Items</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, fontFeatureSettings: '"tnum"' }}>{totalQuantity}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">Subtotal</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, fontFeatureSettings: '"tnum"' }}>Rs. {totalAmount.toLocaleString()}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">Total Discount</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, color: 'warning.main', fontFeatureSettings: '"tnum"' }}>Rs. {(discountTotal + Number(discountAmount || 0)).toLocaleString()}</Typography>
+                    </Box>
+                    <Divider />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1.5, bgcolor: darkMode ? '#1b5e20' : '#e8f5e9', borderRadius: 2 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Net Amount</Typography>
+                      <Typography variant="h5" sx={{ fontWeight: 800, color: 'success.main', fontFeatureSettings: '"tnum"' }}>Rs. {netAmount.toLocaleString()}</Typography>
+                    </Box>
+                  </Stack>
+                </Paper>
+
+                {/* Customer Info Card */}
+                <Paper elevation={3} sx={{ p: 2.5, borderRadius: 3, background: darkMode ? 'linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%)' : 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)' }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PersonIcon /> Customer Information
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Autocomplete
+                        freeSolo
+                        options={cashiers}
+                        value={cashierName || ''}
+                        onChange={(_, val) => setCashierName(val || '')}
+                        onInputChange={(_, val) => setCashierName(val || '')}
+                        renderInput={(params) => <TextField {...params} label="Cashier Name" fullWidth required size="small" />}
                       />
                     </Grid>
-                  ) : (
-                    <Grid item xs={12} sm={6} md={3}>
-                      {(() => {
-                        const paid = Number(paidAmount || 0);
-                        const total = Number(netAmount || 0);
-                        const showInsufficient = paymentMethod === 'Cash' && paid > 0 && paid < total;
-                        const helper = showInsufficient ? `Remaining: Rs ${(total - paid).toFixed(2)}` : '';
-                        return (
+                    <Grid item xs={12} sm={6}>
+                      <Autocomplete
+                        freeSolo
+                        options={customers.map(c => c.name)}
+                        value={customerName || ''}
+                        onChange={(_, val) => {
+                          const name = val || '';
+                          setCustomerName(name);
+                          if (!name) {
+                            setCustomerContact(''); setCustomerEmail('');
+                            return;
+                          }
+                          const found = customers.find(c => c.name.toLowerCase() === name.toLowerCase());
+                          if (found) {
+                            setCustomerContact(found.contact || '');
+                            setCustomerEmail(found.email || '');
+                          }
+                        }}
+                        onInputChange={(_, val, reason) => {
+                          setCustomerName(val || '');
+                          if (!val) { setCustomerContact(''); setCustomerEmail(''); return; }
+                          const found = customers.find(c => c.name.toLowerCase() === val.toLowerCase());
+                          if (found) { setCustomerContact(found.contact || ''); setCustomerEmail(found.email || ''); }
+                        }}
+                        renderInput={(params) => <TextField {...params} label="Customer Name" fullWidth size="small" />}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Customer Contact"
+                        value={customerContact ?? ''}
+                        onChange={e => setCustomerContact(e.target.value)}
+                        fullWidth
+                        size="small"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Customer Email"
+                        type="email"
+                        value={customerEmail ?? ''}
+                        onChange={e => setCustomerEmail(e.target.value)}
+                        fullWidth
+                        size="small"
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
+
+                {/* Payment Card */}
+                <Paper elevation={3} sx={{ p: 2.5, borderRadius: 3, background: darkMode ? 'linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%)' : 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)' }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PaymentsIcon /> Payment
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Payment Method</InputLabel>
+                        <Select
+                          value={paymentMethod}
+                          onChange={e => setPaymentMethod(e.target.value)}
+                          label="Payment Method"
+                        >
+                          <MenuItem value="Cash">Cash</MenuItem>
+                          <MenuItem value="Jazzcash">Jazzcash</MenuItem>
+                          <MenuItem value="Bank transfer">Bank transfer</MenuItem>
+                          <MenuItem value="Easypaisa">Easypaisa</MenuItem>
+                          <MenuItem value="Cheque">Cheque</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Payment Status</InputLabel>
+                        <Select
+                          value={paymentStatus}
+                          onChange={e => setPaymentStatus(e.target.value)}
+                          label="Payment Status"
+                        >
+                          <MenuItem value="Paid">Paid</MenuItem>
+                          <MenuItem value="Credit">Credit</MenuItem>
+                          <MenuItem value="Partial Paid">Partial Paid</MenuItem>
+                          <MenuItem value="Unpaid">Unpaid</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    {paymentStatus === 'Partial Paid' ? (
+                      <>
+                        <Grid item xs={12} sm={6}>
                           <TextField
-                            label={paymentMethod === 'Cash' ? 'Cash Amount' : 'Paid Amount'}
+                            label="Received Payment"
                             type="number"
-                            value={paidAmount || ''}
-                            onChange={(e) => setPaidAmount(e.target.value)}
+                            value={receivedAmount || ''}
+                            onChange={(e) => setReceivedAmount(e.target.value)}
                             fullWidth
-                            required
-                            error={showInsufficient}
-                            helperText={helper}
+                            size="small"
                             InputProps={{
                               inputProps: {
-                                onWheel: (e) => e.target.blur(), // 👈 disables scroll value change
+                                onWheel: (e) => e.target.blur(),
                                 min: 0,
                               },
                             }}
@@ -1163,164 +1182,184 @@ const SellerSaleEntry = () => {
                               },
                             }}
                           />
-                        );
-                      })()}
-                    </Grid>
-                  )}
-                  <Grid item xs={12} sm={6} md={3}>
-                    <TextField
-                      label="Discount Amount"
-                      type="number"
-                      value={discountAmount || ''}
-                      onChange={(e) => setDiscountAmount(e.target.value)}
-                      fullWidth
-                      InputProps={{
-                        inputProps: {
-                          onWheel: (e) => e.target.blur(),
-                          min: 0,
-                        },
-                      }}
-                      sx={{
-                        '& input[type=number]': {
-                          MozAppearance: 'textfield',
-                          '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                            WebkitAppearance: 'none',
-                            margin: 0,
-                          },
-                        },
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={2}>
-                    <TextField
-                      label="Change"
-                      value={changeAmount.toLocaleString()}
-                      InputProps={{ readOnly: true }}
-                      fullWidth
-                      sx={{
-                        '& .MuiInputBase-root': {
-                          bgcolor: changeAmount > 0 ? (darkMode ? '#4a3728' : '#fff3e0') : (darkMode ? '#2a2a2a' : '#f5f5f5'),
-                        }
-                      }}
-                    />
-                  </Grid>
-
-                  {paymentMethod !== 'Cash' && (
-                    <Grid item xs={12} sm={6} md={4}>
-                      <Button
-                        variant="outlined"
-                        component="label"
-                        fullWidth
-                        startIcon={<CloudUploadIcon />}
-                        sx={{ height: '56px' }}
-                      >
-                        {paymentProofFile ? 'Change Payment Proof' : 'Upload Payment Proof'}
-                        <input
-                          type="file"
-                          accept="image/*,.pdf,.doc,.docx"
-                          hidden
-                          onChange={e => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              setPaymentProofFile(file);
-                              // Preview image if it's an image file
-                              if (file.type.startsWith('image/')) {
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  setPaymentProofUrl(reader.result);
-                                };
-                                reader.readAsDataURL(file);
-                              } else {
-                                setPaymentProofUrl('');
-                              }
-                            }
-                          }}
-                        />
-                      </Button>
-                      {paymentProofFile && (
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                          Selected: {paymentProofFile.name}
-                        </Typography>
-                      )}
-                      {paymentProofUrl && paymentProofFile && paymentProofFile.type.startsWith('image/') && (
-                        <Box sx={{ mt: 1, p: 1, border: `1px solid ${darkMode ? '#3a3a3a' : '#e0e0e0'}`, borderRadius: 1 }}>
-                          <img
-                            src={paymentProofUrl}
-                            alt="Payment Proof Preview"
-                            style={{ maxWidth: '100%', maxHeight: 150, borderRadius: 4 }}
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            label="Remaining Payment"
+                            value={(Math.max(0, netAmount - (Number(receivedAmount) || 0))).toLocaleString()}
+                            InputProps={{ readOnly: true }}
+                            fullWidth
+                            size="small"
                           />
-                        </Box>
-                      )}
+                        </Grid>
+                      </>
+                    ) : paymentStatus === 'Credit' ? (
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="Due Date"
+                          type="date"
+                          value={dueDate}
+                          onChange={e => setDueDate(e.target.value)}
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                    ) : (
+                      <Grid item xs={12} sm={6}>
+                        {(() => {
+                          const paid = Number(paidAmount || 0);
+                          const total = Number(netAmount || 0);
+                          const showInsufficient = paymentMethod === 'Cash' && paid > 0 && paid < total;
+                          const helper = showInsufficient ? `Remaining: Rs ${(total - paid).toFixed(2)}` : '';
+                          return (
+                            <TextField
+                              label={paymentMethod === 'Cash' ? 'Cash Amount' : 'Paid Amount'}
+                              type="number"
+                              value={paidAmount || ''}
+                              onChange={(e) => setPaidAmount(e.target.value)}
+                              fullWidth
+                              size="small"
+                              required
+                              error={showInsufficient}
+                              helperText={helper}
+                              InputProps={{
+                                inputProps: {
+                                  onWheel: (e) => e.target.blur(),
+                                  min: 0,
+                                },
+                              }}
+                              sx={{
+                                '& input[type=number]': {
+                                  MozAppearance: 'textfield',
+                                  '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                                    WebkitAppearance: 'none',
+                                    margin: 0,
+                                  },
+                                },
+                              }}
+                            />
+                          );
+                        })()}
+                      </Grid>
+                    )}
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Discount Amount"
+                        type="number"
+                        value={discountAmount || ''}
+                        onChange={(e) => setDiscountAmount(e.target.value)}
+                        fullWidth
+                        size="small"
+                        InputProps={{
+                          startAdornment: <InputAdornment position="start"><LocalOfferIcon sx={{ fontSize: 16 }} /></InputAdornment>,
+                          inputProps: {
+                            onWheel: (e) => e.target.blur(),
+                            min: 0,
+                          },
+                        }}
+                        sx={{
+                          '& input[type=number]': {
+                            MozAppearance: 'textfield',
+                            '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                              WebkitAppearance: 'none',
+                              margin: 0,
+                            },
+                          },
+                        }}
+                      />
                     </Grid>
-                  )}
-                </Grid>
-              </Paper>
-            </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Change"
+                        value={changeAmount.toLocaleString()}
+                        InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start">Rs.</InputAdornment> }}
+                        fullWidth
+                        size="small"
+                        sx={{
+                          '& .MuiInputBase-root': {
+                            bgcolor: changeAmount > 0 ? (darkMode ? '#4a3728' : '#fff3e0') : (darkMode ? '#2a2a2a' : '#f5f5f5'),
+                          }
+                        }}
+                      />
+                    </Grid>
 
-            {/* Summary Section */}
-            <Grid item xs={12} my={1}>
-              <Paper elevation={3} sx={{ p: 3, width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="h6" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
-                  Sale Summary
-                </Typography>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={4} px={1}>
-                    <Box sx={{ p: 2, bgcolor: darkMode ? '#1a3a52' : '#e3f2fd', borderRadius: 2, textAlign: 'center' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Total Quantity
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                        {totalQuantity}
-                      </Typography>
-                    </Box>
+                    {paymentMethod !== 'Cash' && (
+                      <Grid item xs={12}>
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          fullWidth
+                          startIcon={<CloudUploadIcon />}
+                          size="small"
+                          sx={{ height: '40px', borderRadius: 2 }}
+                        >
+                          {paymentProofFile ? 'Change Payment Proof' : 'Upload Payment Proof'}
+                          <input
+                            type="file"
+                            accept="image/*,.pdf,.doc,.docx"
+                            hidden
+                            onChange={e => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                setPaymentProofFile(file);
+                                if (file.type.startsWith('image/')) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    setPaymentProofUrl(reader.result);
+                                  };
+                                  reader.readAsDataURL(file);
+                                } else {
+                                  setPaymentProofUrl('');
+                                }
+                              }
+                            }}
+                          />
+                        </Button>
+                        {paymentProofFile && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                            Selected: {paymentProofFile.name}
+                          </Typography>
+                        )}
+                        {paymentProofUrl && paymentProofFile && paymentProofFile.type.startsWith('image/') && (
+                          <Box sx={{ mt: 1, p: 1, border: `1px solid ${darkMode ? '#3a3a3a' : '#e0e0e0'}`, borderRadius: 1 }}>
+                            <img
+                              src={paymentProofUrl}
+                              alt="Payment Proof Preview"
+                              style={{ maxWidth: '100%', maxHeight: 100, borderRadius: 4 }}
+                            />
+                          </Box>
+                        )}
+                      </Grid>
+                    )}
                   </Grid>
-                  <Grid item xs={12} md={4} px={1}>
-                    <Box sx={{ p: 2, bgcolor: darkMode ? '#4a3728' : '#fff3e0', borderRadius: 2, textAlign: 'center' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Total Discount
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: 'warning.main' }}>
-                        Rs. {(discountTotal + Number(discountAmount || 0)).toLocaleString()}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} md={4} px={1}>
-                    <Box sx={{ p: 2, bgcolor: darkMode ? '#1b5e20' : '#e8f5e9', borderRadius: 2, textAlign: 'center' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Net Amount
-                      </Typography>
-                      <Typography variant="h5" sx={{ fontWeight: 700, color: 'success.main' }}>
-                        Rs. {netAmount.toLocaleString()}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
+                </Paper>
 
-            {/* Action Buttons */}
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
-                <Button
-                  onClick={handleSaveAndPrint}
-                  variant="outlined"
-                  color="secondary"
-                  size="large"
-                  disabled={submitting}
-                  sx={{ minWidth: 150, py: 1.5 }}
-                >
-                  {submitting ? 'Saving...' : 'Save & Print'}
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  disabled={submitting}
-                  sx={{ minWidth: 150, py: 1.5 }}
-                >
-                  {submitting ? 'Saving...' : 'Save Sale'}
-                </Button>
+                {/* Action Buttons */}
+                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                  <Button
+                    onClick={handleSaveAndPrint}
+                    variant="outlined"
+                    color="secondary"
+                    size="large"
+                    disabled={submitting}
+                    startIcon={<PrintIcon />}
+                    sx={{ flex: 1, py: 1.5, borderRadius: 2, fontWeight: 600 }}
+                  >
+                    {submitting ? 'Saving...' : 'Save & Print'}
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    disabled={submitting}
+                    startIcon={<SaveIcon />}
+                    sx={{ flex: 1, py: 1.5, borderRadius: 2, fontWeight: 600 }}
+                  >
+                    {submitting ? 'Saving...' : 'Save Sale'}
+                  </Button>
+                </Box>
               </Box>
             </Grid>
           </Grid>
