@@ -711,14 +711,29 @@ const SellerSaleEntry = () => {
   const handleResendEmail = async (sale) => {
     try {
       const token = localStorage.getItem('token');
-      const emailRes = await API.post(`/sales/${sale._id}/resend-email`, {}, { 
+      
+      // Check if customer email exists, if not use admin email
+      const customerEmail = sale.customerEmail || sale.customer?.email || '';
+      const adminEmail = 'admin@stockflow.com'; // Fallback admin email
+      
+      // Send admin email as fallback if customer email is empty
+      const emailPayload = customerEmail ? {} : { 
+        fallbackToAdmin: true, 
+        adminEmail: adminEmail,
+        reason: 'Customer email not provided'
+      };
+      
+      const emailRes = await API.post(`/sales/${sale._id}/resend-email`, emailPayload, { 
         headers: { Authorization: `Bearer ${token}` },
         timeout: 90000 // 90 seconds timeout for email operations
       });
       const returnedSale = emailRes.data.sale || {};
       const paid = returnedSale.paymentMethod === 'Cash' ? (returnedSale.cashAmount || 0) : (returnedSale.paidAmount || 0);
       const change = returnedSale.changeAmount || 0;
-      setSuccess(`Email resent successfully (Paid: Rs. ${paid.toLocaleString()}, Change: Rs. ${change.toLocaleString()})`);
+      
+      // Show appropriate success message based on who received the email
+      const emailRecipient = customerEmail ? 'customer' : 'admin';
+      setSuccess(`Email resent successfully to ${emailRecipient} (Paid: Rs. ${paid.toLocaleString()}, Change: Rs. ${change.toLocaleString()})${!customerEmail ? ' - Admin email used as fallback' : ''}`);
       // refresh recent sales
       const payload = JSON.parse(atob(token.split('.')[1]));
       const res = await API.get(`/sales?sellerId=${payload.id}&limit=10`, { headers: { Authorization: `Bearer ${token}` } });
