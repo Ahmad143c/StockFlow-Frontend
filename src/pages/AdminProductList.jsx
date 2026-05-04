@@ -6,6 +6,7 @@ import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import EditIcon from '@mui/icons-material/Edit';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import API from '../api/api';
 import { useDarkMode } from '../context/DarkModeContext';
 import { Alert } from '@mui/material';
@@ -235,20 +236,20 @@ const AdminProductList = () => {
         {/* Analytics */}
         <Grid container spacing={2} sx={{ mb: 3, px: { xs: 1, sm: 1 }, mt: '2px', }}>
           <Grid columns={12}>
-            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', }}>
-              <Typography variant="subtitle2" color="text.secondary">Total Products</Typography>
+            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', bgcolor: darkMode ? '#1e1e1e' : 'inherit' }}>
+              <Typography variant="subtitle2" sx={{ color: darkMode ? '#000' : 'text.secondary' }}>Total Products</Typography>
               <Typography variant="h5" color="primary" fontWeight={700}>{formatNum(totalProducts)}</Typography>
             </Paper>
           </Grid>
           <Grid columns={12}>
-            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', }}>
-              <Typography variant="subtitle2" color="text.secondary">Total Inventory Value</Typography>
+            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', bgcolor: darkMode ? '#1e1e1e' : 'inherit' }}>
+              <Typography variant="subtitle2" sx={{ color: darkMode ? '#000' : 'text.secondary' }}>Total Inventory Value</Typography>
               <Typography variant="h5" color="success.main" fontWeight={700}>Rs. {formatNum(Number(totalInventoryValue.toFixed(2)))}</Typography>
             </Paper>
           </Grid>
           <Grid columns={12}>
-            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', }}>
-              <Typography variant="subtitle2" color="text.secondary">Total Profit</Typography>
+            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', bgcolor: darkMode ? '#1e1e1e' : 'inherit' }}>
+              <Typography variant="subtitle2" sx={{ color: darkMode ? '#000' : 'text.secondary' }}>Total Profit</Typography>
               <Typography variant="h5" color="info.main" fontWeight={700}>Rs. {formatNum(Number(totalProfit.toFixed(2)))}</Typography>
             </Paper>
           </Grid>
@@ -309,7 +310,7 @@ const AdminProductList = () => {
             const isLow = reorderLevel > 0 ? totalPieces <= reorderLevel : stockQuantity <= 1;
             return (
               <Grid item xs={12} sm={6} md={4} lg={3} key={product._id} sx={{ display: 'flex', justifyContent: 'center' }}>
-                <Card elevation={6} sx={{ borderRadius: 3, overflow: 'hidden', position: 'relative', cursor: 'pointer', width: { xs: '100%', sm: 360, md: 385 }, minHeight: 420, boxShadow: 6 }} onClick={() => window.location.href = `/admin/product/${product._id}`}>
+                <Card elevation={6} sx={{ borderRadius: 3, overflow: 'hidden', position: 'relative', width: { xs: '100%', sm: 360, md: 385 }, minHeight: 420, boxShadow: 6 }}>
                   {isLow && (
                     <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}>
                       <Chip color="error" size="small" label="Low Stock" />
@@ -391,14 +392,19 @@ const AdminProductList = () => {
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'flex-end' }}>
+                      <Tooltip title="View Product">
+                        <IconButton color="primary" onClick={() => window.location.href = `/admin/product/${product._id}`} size="small">
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Edit Product">
-                        <IconButton color="primary" onClick={e => { e.stopPropagation(); handleEditClick(product); }}>
-                          <EditIcon />
+                        <IconButton color="primary" onClick={e => { e.stopPropagation(); handleEditClick(product); }} size="small">
+                          <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete Product">
-                        <IconButton color="error" onClick={e => { e.stopPropagation(); handleDelete(product._id); }}>
-                          <DeleteIcon />
+                        <IconButton color="error" onClick={e => { e.stopPropagation(); handleDelete(product._id); }} size="small">
+                          <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </Box>

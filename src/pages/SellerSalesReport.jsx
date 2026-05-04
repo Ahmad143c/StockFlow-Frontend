@@ -39,6 +39,7 @@ import { useDarkMode } from '../context/DarkModeContext';
 const SellerSalesReport = () => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const { darkMode } = useDarkMode();
   const [sales, setSales] = useState([]);
   const [page, setPage] = useState(0);
@@ -495,7 +496,7 @@ const SellerSalesReport = () => {
             gridTemplateColumns: {
               xs: '1fr',
               sm: 'repeat(2, 1fr)',
-              md: 'repeat(5, auto)'
+              md: 'repeat(4, 1fr)'
             },
             gap: { xs: 1.5, sm: 2 },
             mb: 2,
@@ -580,7 +581,7 @@ const SellerSalesReport = () => {
               maxWidth: {
                 xs: 'calc(80vw - 10px)',
                 sm: '100%',
-                md: 'calc(103vw - 300px)'
+                md: '100%'
               },
               minWidth: 0,
               overflowX: 'auto',
@@ -607,7 +608,7 @@ const SellerSalesReport = () => {
             <Table
               stickyHeader
               sx={{
-                minWidth: { xs: 800, sm: '100%', md: '100%' },
+                minWidth: { xs: 800, sm: 700, md: '100%' },
                 width: '100%',
                 tableLayout: { xs: 'auto', sm: 'auto', md: 'auto' },
                 whiteSpace: { xs: 'nowrap', sm: 'nowrap', md: 'nowrap' },

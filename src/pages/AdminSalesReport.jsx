@@ -39,6 +39,7 @@ import { useDarkMode } from '../context/DarkModeContext';
 const AdminSalesReport = () => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const { darkMode } = useDarkMode();
   const [sales, setSales] = useState([]);
   const [page, setPage] = useState(0);
@@ -565,7 +566,7 @@ const AdminSalesReport = () => {
             gridTemplateColumns: {
               xs: '1fr',
               sm: 'repeat(2, 1fr)',
-              md: 'repeat(5, auto)'
+              md: 'repeat(4, 1fr)'
             },
             gap: { xs: 1.5, sm: 2 },
             mb: 2,
@@ -650,7 +651,7 @@ const AdminSalesReport = () => {
               maxWidth: {
                 xs: 'calc(80vw - 10px)',
                 sm: '100%',
-                md: 'calc(103vw - 300px)'
+                md: '100%'
               },
               minWidth: 0,
               overflowX: 'auto', // Scrollable for all screen sizes including desktop
@@ -677,7 +678,7 @@ const AdminSalesReport = () => {
             <Table
               stickyHeader
               sx={{
-                minWidth: { xs: 800, sm: '100%', md: '100%' }, // Only set minWidth for mobile
+                minWidth: { xs: 800, sm: 700, md: '100%' }, // Only set minWidth for mobile
                 width: '100%', // Full width for all screen sizes
                 tableLayout: { xs: 'auto', sm: 'auto', md: 'auto' }, // Auto layout for all sizes
                 whiteSpace: { xs: 'nowrap', sm: 'nowrap', md: 'nowrap' },
