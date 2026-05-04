@@ -1,5 +1,15 @@
 // utility for generating invoice HTML used across various components
 
+// Helper: split product name into 2 lines (first 4 words on line 1, rest on line 2)
+function splitProductName(name) {
+  if (!name) return 'Item';
+  const words = name.trim().split(/\s+/);
+  if (words.length <= 4) return name;
+  const line1 = words.slice(0, 4).join(' ');
+  const line2 = words.slice(4).join(' ');
+  return `<span style="display:block;line-height:1.3">${line1}</span><span style="display:block;line-height:1.3">${line2}</span>`;
+}
+
 export function generateInvoiceHTML(invoice, products = []) {
   const itemsHaveDiscount = (invoice.items || []).some(i => Number(i.discount) > 0);
   // build refund maps keyed by productId/SKU to total refunded qty and amount
@@ -277,7 +287,7 @@ export function generateInvoiceHTML(invoice, products = []) {
                 return `
                 <tr>
                   <td>${idx + 1}</td>
-                  <td>${i.productName || 'Item'}</td>
+                  <td>${splitProductName(i.productName)}</td>
                   <td class="text-right">${origQty}${refundedQty ? ` (-${refundedQty})` : ''}</td>
                   <td class="text-right">${Number(i.perPiecePrice || 0).toLocaleString()}</td>
                   ${hasRefunds ? `<td class="text-right">${refundAmt ? 'Rs. ' + refundAmt.toLocaleString() : ''}</td>` : ''}

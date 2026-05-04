@@ -732,7 +732,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
       }
       return `
       <tr>
-        <td style="padding:8px;border-bottom:1px solid #eee;">${it.productName || it.SKU || 'Item'}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;">${(() => { const n = (it.productName || it.SKU || 'Item'); const w = n.trim().split(/\s+/); return w.length <= 4 ? n : `<span style="display:block;line-height:1.3">${w.slice(0,4).join(' ')}</span><span style="display:block;line-height:1.3">${w.slice(4).join(' ')}</span>`; })()}</td>
         <td style="padding:8px;border-bottom:1px solid #eee;text-align:center;">${it.quantity}</td>
         <td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">Rs. ${Number(it.perPiecePrice || 0).toLocaleString()}</td>
         <td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">${warrantyText}</td>

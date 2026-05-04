@@ -345,7 +345,7 @@ const AdminRefunds = () => {
 				return `
                     <tr>
                       <td>${refIdx * 10 + itemIdx + 1}</td>
-                      <td>${item.productName || '-'}</td>
+                      <td>${(() => { const n = (item.productName || '-'); const w = n.trim().split(/\s+/); return w.length <= 4 ? n : `<span style="display:block;line-height:1.3">${w.slice(0,4).join(' ')}</span><span style="display:block;line-height:1.3">${w.slice(4).join(' ')}</span>`; })()}</td>
                       <td class="text-right">${item.quantity || 0}</td>
                       <td class="text-right">${Number(itemPrice || 0).toLocaleString()}</td>
                       <td class="text-right">${Number(itemTotal).toLocaleString()}</td>
