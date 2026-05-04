@@ -316,7 +316,7 @@ const AdminSellers = () => {
       });
       
       // Delete all refunds for this seller
-      await API.delete(`/refunds/seller/${deleteSeller._id}`, {
+      await API.delete(`/sales/refunds/seller/${deleteSeller._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
