@@ -42,6 +42,7 @@ const AdminProductList = () => {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [filterBrand, setFilterBrand] = useState('');
   const [vendors, setVendors] = useState([]);
   const { darkMode } = useDarkMode();
   const [brands, setBrands] = useState([]);
@@ -112,7 +113,8 @@ const AdminProductList = () => {
       product.SKU.toLowerCase().includes(search.toLowerCase()) ||
       product.category.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = filterCategory ? product.category === filterCategory : true;
-    return matchesSearch && matchesCategory;
+    const matchesBrand = filterBrand ? product.brand === filterBrand : true;
+    return matchesSearch && matchesCategory && matchesBrand;
   });
 
   const handleEditClick = (product) => {
@@ -271,6 +273,18 @@ const AdminProductList = () => {
             <MenuItem value="">All</MenuItem>
             {allCategories.map(cat => (
               <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label="Filter by Brand"
+            value={filterBrand}
+            onChange={e => setFilterBrand(e.target.value)}
+            sx={{ minWidth: { xs: '100%', sm: 180 } }}
+          >
+            <MenuItem value="">All</MenuItem>
+            {allBrands.map(brand => (
+              <MenuItem key={brand} value={brand}>{brand}</MenuItem>
             ))}
           </TextField>
         </Box>
