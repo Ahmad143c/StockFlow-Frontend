@@ -459,7 +459,10 @@ const AdminProductProfile = () => {
                 </Box>
               )}
               <Typography variant="body1" gutterBottom>Color: <b>{product.color}</b></Typography>
+              <Typography variant="body1">Total Pieces: <b>{formatNum((Number(product.cartonQuantity)||0) * (Number(product.piecesPerCarton)||0) + (Number(product.losePieces)||0))}</b></Typography>
+              <Typography variant="body1">Stock Quantity: <b>Cart: {formatNum(product.cartonQuantity)}, Lose: {formatNum(product.losePieces)}</b></Typography>
               <Divider sx={{ my: 2 }} />
+
               {(() => {
                 const cartonQuantity = Number(product.cartonQuantity) || 0;
                 const piecesPerCarton = Number(product.piecesPerCarton) || 0;
@@ -479,8 +482,7 @@ const AdminProductProfile = () => {
               <Typography variant="body2">Cost Per Piece: <b>Rs. {formatNum(product.costPerPiece)}</b></Typography>
               <Typography variant="body2">Cost Per Carton: <b>Rs. {formatNum((Number(product.cartonQuantity)||0) * (Number(product.piecesPerCarton)||0) * (Number(product.costPerPiece)||0))}</b></Typography>
               <Typography variant="body2">Selling Per Piece: <b>Rs. {formatNum(product.sellingPerPiece)}</b></Typography>
-              <Typography variant="body2">Total Pieces: <b>{formatNum((Number(product.cartonQuantity)||0) * (Number(product.piecesPerCarton)||0) + (Number(product.losePieces)||0))}</b></Typography>
-              <Typography variant="body2">Stock Quantity: <b>Cart: {formatNum(product.cartonQuantity)}, Lose: {formatNum(product.losePieces)}</b></Typography>
+
               <Divider sx={{ my: 2 }} />
               <Typography variant="body2" color="success.main" fontWeight={600}>Per Piece Profit: <b>Rs. {formatNum((Number(product.sellingPerPiece)||0) - (Number(product.costPerPiece)||0))}</b></Typography>
               <Typography variant="body2" color="success.main" fontWeight={600}>Total Unit Profit: <b>Rs. {formatNum((((Number(product.sellingPerPiece)||0) - (Number(product.costPerPiece)||0)) * (((Number(product.cartonQuantity)||0) * (Number(product.piecesPerCarton)||0)) + (Number(product.losePieces)||0))))}</b></Typography>

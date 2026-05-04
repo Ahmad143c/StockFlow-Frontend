@@ -163,29 +163,29 @@ const AdminProductList = () => {
   const handleUpdate = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Check if warrantyClaimedPieces is being reduced, restock the difference
       const oldClaimedPieces = Number(editProduct.warrantyClaimedPieces || 0);
       const newClaimedPieces = Number(form.warrantyClaimedPieces || 0);
       const piecesToRestock = Math.max(0, oldClaimedPieces - newClaimedPieces);
-      
+
       let updatedForm = { ...form };
-      
+
       if (piecesToRestock > 0) {
         const piecesPerCarton = Number(form.piecesPerCarton) || 1;
         const originalTotalPieces = Number(editProduct.totalPieces) || 0;
         const newTotalPieces = originalTotalPieces + piecesToRestock;
-        
+
         let newCartons = Math.floor(newTotalPieces / piecesPerCarton);
         let newLosePieces = newTotalPieces % piecesPerCarton;
         const stockQuantity = newCartons + (newLosePieces > 0 ? 1 : 0);
-        
+
         const costPerPiece = Number(form.costPerPiece) || 0;
         const sellingPerPiece = Number(form.sellingPerPiece) || 0;
         const perPieceProfit = sellingPerPiece - costPerPiece;
         const totalUnitCost = costPerPiece * newTotalPieces;
         const totalUnitProfit = perPieceProfit * newTotalPieces;
-        
+
         updatedForm = {
           ...updatedForm,
           totalPieces: newTotalPieces,
@@ -197,7 +197,7 @@ const AdminProductList = () => {
           totalUnitProfit: totalUnitProfit
         };
       }
-      
+
       await API.put(`/products/${editProduct._id}`, updatedForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -233,7 +233,7 @@ const AdminProductList = () => {
         {/* Analytics */}
         <Grid container spacing={2} sx={{ mb: 3, px: { xs: 1, sm: 1 }, mt: '2px', }}>
           <Grid columns={12}>
-            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px',}}>
+            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', }}>
               <Typography variant="subtitle2" color="text.secondary">Total Products</Typography>
               <Typography variant="h5" color="primary" fontWeight={700}>{formatNum(totalProducts)}</Typography>
             </Paper>
@@ -245,7 +245,7 @@ const AdminProductList = () => {
             </Paper>
           </Grid>
           <Grid columns={12}>
-            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px',}}>
+            <Paper elevation={3} sx={{ p: 2, textAlign: 'center', mb: 2, mx: '12px', }}>
               <Typography variant="subtitle2" color="text.secondary">Total Profit</Typography>
               <Typography variant="h5" color="info.main" fontWeight={700}>Rs. {formatNum(Number(totalProfit.toFixed(2)))}</Typography>
             </Paper>
@@ -333,6 +333,8 @@ const AdminProductList = () => {
                           sx={{ mr: 0.5 }}
                         />
                       )}
+                      <Typography variant="body1" color="primary">Total Pieces: {formatNum(totalPieces)}</Typography>
+                      <Typography variant="body1" color="info.main">Stock Quantity: (Cart: {formatNum(displayCartons)}, Lose: {formatNum(displayLosePieces)})</Typography>
                       <Typography variant="body2" color="text.secondary" component="span">
                         Brand: {product.brand}
                       </Typography>
@@ -354,8 +356,7 @@ const AdminProductList = () => {
                         : 'No Warranty'}
                     </Typography>
                     {/* Selling Per Carton removed */}
-                    <Typography variant="body2" color="primary">Total Pieces: {formatNum(totalPieces)}</Typography>
-                    <Typography variant="body2" color="info.main">Stock Quantity: (Cart: {formatNum(displayCartons)}, Lose: {formatNum(displayLosePieces)})</Typography>
+
                     {Number(product.warrantyClaimedPieces || 0) > 0 && (
                       <Typography variant="body2" color="warning.main">
                         Warranty claimed: {formatNum(Number(product.warrantyClaimedPieces || 0))} pcs
