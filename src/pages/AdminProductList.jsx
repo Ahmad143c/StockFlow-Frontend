@@ -324,6 +324,8 @@ const AdminProductList = () => {
                         Stock low: {formatNum(totalPieces)} pcs. {reorderLevel ? `Reorder level: ${formatNum(reorderLevel)}.` : ''}
                       </Alert>
                     )}
+                    <Typography variant="body1" color="primary">Total Pieces: {formatNum(totalPieces)}</Typography>
+                    <Typography variant="body1" color="info.main">Stock Quantity: (Cart: {formatNum(displayCartons)}, Lose: {formatNum(displayLosePieces)})</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {product.subCategory && (
                         <Chip
@@ -333,8 +335,7 @@ const AdminProductList = () => {
                           sx={{ mr: 0.5 }}
                         />
                       )}
-                      <Typography variant="body1" color="primary">Total Pieces: {formatNum(totalPieces)}</Typography>
-                      <Typography variant="body1" color="info.main">Stock Quantity: (Cart: {formatNum(displayCartons)}, Lose: {formatNum(displayLosePieces)})</Typography>
+
                       <Typography variant="body2" color="text.secondary" component="span">
                         Brand: {product.brand}
                       </Typography>
