@@ -377,6 +377,8 @@ const SellerSaleEntry = () => {
       }
       const payload = JSON.parse(atob(token.split('.')[1]));
       const effectivePaid = paymentStatus === 'Partial Paid' ? (Number(receivedAmount) || 0) : (Number(paidAmount) || 0);
+      const adminEmail = 'adilelectric17@gmail.com';
+      const effectiveCustomerEmail = customerEmail || adminEmail;
       const res = await API.post('/sales', {
         items,
         sellerId: payload.id,
@@ -384,7 +386,8 @@ const SellerSaleEntry = () => {
         cashierName,
         customerName,
         customerContact,
-        customerEmail,
+        customerEmail: effectiveCustomerEmail,
+        emailFallbackToAdmin: !customerEmail,
         discountAmount: Number(discountAmount) || 0,
         paidAmount: effectivePaid,
         dueDate: dueDate || '',
