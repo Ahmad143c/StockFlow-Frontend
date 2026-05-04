@@ -714,7 +714,7 @@ const SellerSaleEntry = () => {
       
       // Check if customer email exists, if not use admin email
       const customerEmail = sale.customerEmail || sale.customer?.email || '';
-      const adminEmail = 'admin@stockflow.com'; // Fallback admin email
+      const adminEmail = 'adilelectric17@gmail.com';
       
       // Send admin email as fallback if customer email is empty
       const emailPayload = customerEmail ? {} : { 
