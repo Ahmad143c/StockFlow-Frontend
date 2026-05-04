@@ -129,7 +129,7 @@ const AdminSellers = () => {
       });
       
       // Fetch seller's refunds
-      const refundsRes = await API.get(`/refunds?sellerId=${seller._id}`, {
+      const refundsRes = await API.get(`/sales/refunds?sellerId=${seller._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
