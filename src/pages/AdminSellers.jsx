@@ -162,7 +162,15 @@ const AdminSellers = () => {
 
   const generateSellerReportHTML = (seller, sales, refunds) => {
     const totalSales = sales.reduce((sum, s) => sum + Number(s.netAmount || 0), 0);
-    const totalRefunds = refunds.reduce((sum, r) => sum + Number(r.refundAmount || 0), 0);
+    const totalRefunds = refunds.reduce((sum, r) => {
+      // Use the same calculation logic as AdminRefunds.jsx
+      if (r && (Number(r.totalRefundAmount) || 0) > 0) return sum + Number(r.totalRefundAmount || 0);
+      return sum + (r.items || []).reduce((itemTotal, item) => {
+        const price = Number(item.perPiecePrice || item.price || 0);
+        const qty = Number(item.quantity || 0);
+        return itemTotal + (price * qty);
+      }, 0);
+    }, 0);
     
     const salesRows = sales.map((sale, idx) => `
       <tr>
@@ -176,17 +184,31 @@ const AdminSellers = () => {
       </tr>
     `).join('');
     
-    const refundsRows = refunds.map((refund, idx) => `
+    const refundsRows = refunds.map((refund, idx) => {
+      // Calculate refund amount using the same logic as AdminRefunds.jsx
+      let refundAmount = 0;
+      if (refund && (Number(refund.totalRefundAmount) || 0) > 0) {
+        refundAmount = Number(refund.totalRefundAmount || 0);
+      } else {
+        refundAmount = (refund.items || []).reduce((itemTotal, item) => {
+          const price = Number(item.perPiecePrice || item.price || 0);
+          const qty = Number(item.quantity || 0);
+          return itemTotal + (price * qty);
+        }, 0);
+      }
+      
+      return `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd;">${idx + 1}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${refund.invoiceNumber || refund._id?.substr(-6) || '-'}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${new Date(refund.createdAt).toLocaleDateString()}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${refund.customerName || '-'}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${refund.items?.length || 0}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">Rs. ${Number(refund.refundAmount || 0).toLocaleString()}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">Rs. ${refundAmount.toLocaleString()}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${refund.reason || '-'}</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
     
     return `
       <html>
