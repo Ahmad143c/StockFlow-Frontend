@@ -128,13 +128,32 @@ const AdminSellers = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Fetch seller's refunds
-      const refundsRes = await API.get(`/sales/refunds?sellerId=${seller._id}`, {
+      // Fetch seller's refunds (same approach as AdminRefunds.jsx)
+      const allSalesRes = await API.get(`/sales`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       const sales = Array.isArray(salesRes.data) ? salesRes.data : [];
-      const refunds = Array.isArray(refundsRes.data) ? refundsRes.data : [];
+      const allSales = Array.isArray(allSalesRes.data) ? allSalesRes.data : [];
+      
+      // Filter sales for this seller and extract refunds like AdminRefunds.jsx
+      const sellerSalesWithRefunds = allSales.filter(s => 
+        s.sellerId === seller._id && 
+        Array.isArray(s.refunds) && 
+        s.refunds.length > 0
+      );
+      
+      // Extract refunds from sales (flatten the structure)
+      const refunds = sellerSalesWithRefunds.flatMap(sale => 
+        sale.refunds.map(refund => ({
+          ...refund,
+          sellerId: sale.sellerId,
+          sellerName: sale.sellerName,
+          customerName: sale.customerName,
+          invoiceNumber: sale.invoiceNumber,
+          createdAt: refund.createdAt || sale.createdAt
+        }))
+      );
       
       // Generate HTML for PDF
       const html = generateSellerReportHTML(seller, sales, refunds);
