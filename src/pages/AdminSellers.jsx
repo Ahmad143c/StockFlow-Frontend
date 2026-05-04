@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, List, ListItem, ListItemText, Fade, Divider, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Avatar } from '@mui/material';
+import { Box, Typography, Paper, List, ListItem, ListItemText, Fade, Divider, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Avatar, CircularProgress, Alert } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import PrintIcon from '@mui/icons-material/Print';
 import API from '../api/api';
 import { useDarkMode } from '../context/DarkModeContext';
 
@@ -19,6 +20,8 @@ const AdminSellers = () => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteSeller, setDeleteSeller] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
+  const [pdfError, setPdfError] = useState('');
     const [editPasswordOpen, setEditPasswordOpen] = useState(false);
   const [editPasswordInput, setEditPasswordInput] = useState('');
   const [editPasswordError, setEditPasswordError] = useState('');
@@ -114,20 +117,199 @@ const AdminSellers = () => {
     setDeleteSeller(null);
   };
 
+  const generateSellerPDF = async (seller) => {
+    setPdfDownloading(true);
+    setPdfError('');
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Fetch seller's sales
+      const salesRes = await API.get(`/sales?sellerId=${seller._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Fetch seller's refunds
+      const refundsRes = await API.get(`/refunds?sellerId=${seller._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const sales = Array.isArray(salesRes.data) ? salesRes.data : [];
+      const refunds = Array.isArray(refundsRes.data) ? refundsRes.data : [];
+      
+      // Generate HTML for PDF
+      const html = generateSellerReportHTML(seller, sales, refunds);
+      
+      // Open print window
+      const printWindow = window.open('', '_blank');
+      if (!printWindow || !printWindow.document) {
+        setPdfError('Popup blocked. Please allow popups to download the report.');
+        setPdfDownloading(false);
+        return;
+      }
+      
+      printWindow.document.write(html);
+      printWindow.document.close();
+      setTimeout(() => printWindow.print(), 250);
+      
+      setPdfDownloading(false);
+      return true;
+    } catch (err) {
+      setPdfError(err.response?.data?.message || 'Failed to generate report');
+      setPdfDownloading(false);
+      return false;
+    }
+  };
+
+  const generateSellerReportHTML = (seller, sales, refunds) => {
+    const totalSales = sales.reduce((sum, s) => sum + Number(s.netAmount || 0), 0);
+    const totalRefunds = refunds.reduce((sum, r) => sum + Number(r.refundAmount || 0), 0);
+    
+    const salesRows = sales.map((sale, idx) => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd;">${idx + 1}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${sale.invoiceNumber || sale._id?.substr(-6) || '-'}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${new Date(sale.createdAt).toLocaleDateString()}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${sale.customerName || '-'}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${sale.items?.length || 0}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">Rs. ${Number(sale.netAmount || 0).toLocaleString()}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${sale.paymentStatus || '-'}</td>
+      </tr>
+    `).join('');
+    
+    const refundsRows = refunds.map((refund, idx) => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd;">${idx + 1}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${refund.invoiceNumber || refund._id?.substr(-6) || '-'}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${new Date(refund.createdAt).toLocaleDateString()}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${refund.customerName || '-'}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${refund.items?.length || 0}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">Rs. ${Number(refund.refundAmount || 0).toLocaleString()}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${refund.reason || '-'}</td>
+      </tr>
+    `).join('');
+    
+    return `
+      <html>
+        <head>
+          <title>Seller Deletion Report - ${seller.username}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1976d2; padding-bottom: 15px; }
+            .seller-info { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+            .summary { display: flex; justify-content: space-around; margin-bottom: 30px; }
+            .summary-item { text-align: center; padding: 15px; background: #e3f2fd; border-radius: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th { background: #1976d2; color: white; padding: 10px; text-align: left; }
+            td { padding: 8px; border: 1px solid #ddd; }
+            tr:nth-child(even) { background: #f9f9f9; }
+            .section-title { color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 5px; margin: 30px 0 15px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Seller Deletion Report</h1>
+            <p>Generated on ${new Date().toLocaleDateString()}</p>
+          </div>
+          
+          <div class="seller-info">
+            <h2>Seller Information</h2>
+            <p><strong>Username:</strong> ${seller.username}</p>
+            <p><strong>Shop Name:</strong> ${seller.shopName || '-'}</p>
+            <p><strong>Email:</strong> ${seller.email || '-'}</p>
+            <p><strong>Contact:</strong> ${seller.contact || '-'}</p>
+            <p><strong>Selling Point:</strong> ${seller.sellingPoint || '-'}</p>
+            <p><strong>Member Since:</strong> ${seller.createdAt ? new Date(seller.createdAt).toLocaleDateString() : '-'}</p>
+          </div>
+          
+          <div class="summary">
+            <div class="summary-item">
+              <h3>Total Sales</h3>
+              <p style="font-size: 24px; font-weight: bold; color: #4caf50;">Rs. ${totalSales.toLocaleString()}</p>
+            </div>
+            <div class="summary-item">
+              <h3>Total Refunds</h3>
+              <p style="font-size: 24px; font-weight: bold; color: #f44336;">Rs. ${totalRefunds.toLocaleString()}</p>
+            </div>
+            <div class="summary-item">
+              <h3>Net Amount</h3>
+              <p style="font-size: 24px; font-weight: bold; color: #2196f3;">Rs. ${(totalSales - totalRefunds).toLocaleString()}</p>
+            </div>
+          </div>
+          
+          <h2 class="section-title">Sales Records (${sales.length})</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>S/N</th>
+                <th>Invoice</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${salesRows || '<tr><td colspan="7" style="text-align: center;">No sales found</td></tr>'}
+            </tbody>
+          </table>
+          
+          <h2 class="section-title">Refund Records (${refunds.length})</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>S/N</th>
+                <th>Invoice</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Amount</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${refundsRows || '<tr><td colspan="7" style="text-align: center;">No refunds found</td></tr>'}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+  };
+
   const handleDeleteConfirm = async () => {
+    // First download PDF
+    const pdfSuccess = await generateSellerPDF(deleteSeller);
+    if (!pdfSuccess) {
+      return; // Stop if PDF generation failed
+    }
+    
+    // Then proceed with deletion
     setDeleteLoading(true);
     try {
       const token = localStorage.getItem('token');
+      
+      // Delete all sales for this seller
+      await API.delete(`/sales/seller/${deleteSeller._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Delete all refunds for this seller
+      await API.delete(`/refunds/seller/${deleteSeller._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Delete the seller
       await API.delete(`/auth/delete/${deleteSeller._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       setDeleteLoading(false);
       setDeleteOpen(false);
       setDeleteSeller(null);
       fetchSellers();
     } catch (err) {
       setDeleteLoading(false);
-      alert(err.response?.data?.message || 'Failed to delete seller');
+      alert(err.response?.data?.message || 'Failed to delete seller and associated data');
     }
   };
 
@@ -216,16 +398,59 @@ const AdminSellers = () => {
           </DialogActions>
         </Dialog>
 
-        <Dialog open={deleteOpen} onClose={handleDeleteClose} maxWidth="xs" fullWidth sx={{ '& .MuiDialog-paper': { m: { xs: 1, sm: 2 } } }}>
-          <DialogTitle>Confirm Delete</DialogTitle>
+        <Dialog open={deleteOpen} onClose={handleDeleteClose} maxWidth="sm" fullWidth sx={{ '& .MuiDialog-paper': { m: { xs: 1, sm: 2 } } }}>
+          <DialogTitle sx={{ color: 'error.main' }}>⚠️ Warning: Delete Seller</DialogTitle>
           <DialogContent>
-            <Typography variant="body1">
-              Are you sure you want to delete the seller <strong>{deleteSeller?.username}</strong>? This action cannot be undone.
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                This will permanently delete the seller and ALL associated data:
+              </Typography>
+              <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+                <li>All sales records</li>
+                <li>All refund records</li>
+                <li>Seller account information</li>
+              </ul>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                This action CANNOT be undone!
+              </Typography>
+            </Alert>
+            
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Are you sure you want to delete the seller <strong>{deleteSeller?.username}</strong>?
             </Typography>
+            
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              A PDF report of all sales and refunds will be automatically downloaded before deletion for your records.
+            </Typography>
+            
+            {pdfError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {pdfError}
+              </Alert>
+            )}
+            
+            {pdfDownloading && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <CircularProgress size={20} />
+                <Typography variant="body2">Generating report...</Typography>
+              </Box>
+            )}
           </DialogContent>
           <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 2 } }}>
-            <Button onClick={handleDeleteClose} fullWidth={false} sx={{ minWidth: { xs: '100%', sm: 'auto' } }}>Cancel</Button>
-            <Button onClick={handleDeleteConfirm} variant="contained" color="error" disabled={deleteLoading} fullWidth={false} sx={{ minWidth: { xs: '100%', sm: 'auto' } }}>{deleteLoading ? 'Deleting...' : 'Delete'}</Button>
+            <Button onClick={handleDeleteClose} fullWidth={false} sx={{ minWidth: { xs: '100%', sm: 'auto' } }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleDeleteConfirm} 
+              variant="contained" 
+              color="error" 
+              disabled={deleteLoading || pdfDownloading}
+              startIcon={<DeleteIcon />}
+              fullWidth={false} 
+              sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
+            >
+              {deleteLoading ? 'Deleting...' : pdfDownloading ? 'Generating Report...' : 'Download Report & Delete'}
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>
