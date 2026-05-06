@@ -230,17 +230,18 @@ export function generateInvoiceHTML(invoice, products = []) {
               padding: 0 !important;
               box-shadow: none !important;
               zoom: 1 !important;           /* reset zoom for print */
-              font-size: 18px;
+              font-size: 11px !important;
+              line-height: 1.2 !important;
             }
 
-            .header h1         { font-size: 20px; }
-            .header p          { font-size: 16px; }
-            .invoice-info div  { font-size: 16px; }
-            th, td             { font-size: 16px; }
-            .total-row td      { font-size: 17px; }
-            .payment-info .row        { font-size: 16px; }
-            .payment-info .row.bold   { font-size: 17px; }
-            .footer            { font-size: 16px; }
+            .header h1         { font-size: 13px !important; margin-bottom: 2px !important; }
+            .header p          { font-size: 10px !important; margin: 1px 0 !important; }
+            .invoice-info div  { font-size: 10px !important; margin: 1px 0 !important; }
+            th, td             { font-size: 9px !important; padding: 2px 1px !important; }
+            .total-row td      { font-size: 10px !important; padding: 2px 1px !important; }
+            .payment-info .row        { font-size: 10px !important; margin: 1px 0 !important; }
+            .payment-info .row.bold   { font-size: 11px !important; margin: 1px 0 !important; }
+            .footer            { font-size: 10px !important; margin-top: 2px !important; }
 
             tr      { page-break-inside: avoid; }
             .footer { page-break-after: avoid; }
