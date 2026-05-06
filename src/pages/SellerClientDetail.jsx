@@ -241,14 +241,13 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
           return;
         }
 
-        // Fetch invoices for this seller, optionally filtered by customer
+        // Always fetch all invoices for this seller and apply filters client-side.
+        // Server-side `customerName` or contact filters are unreliable when data is inconsistent, so we omit them.
         const s = startDate ? `&start=${startDate}` : '';
         const e = endDate ? `&end=${endDate}` : '';
         const iq = invQuery ? `&invoice=${encodeURIComponent(invQuery)}` : '';
-        const cn = custName ? `&customerName=${encodeURIComponent(custName)}` : '';
-        const cc = custContact ? `&customerContact=${encodeURIComponent(custContact)}` : '';
         const res = await API.get(
-          `/sales?sellerId=${sellerId}${cn}${cc}${s}${e}${iq}`,
+          `/sales?sellerId=${sellerId}${s}${e}${iq}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const allInvoices = Array.isArray(res.data) ? res.data : [];
@@ -378,18 +377,6 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
     });
     setInvoices(filteredRegular);
     setRefundInvoices(filtered.filter(i => i.refunds && i.refunds.length > 0));
-  }, [selectedCustomer, invoiceQuery, paymentStatusFilter, fetchInvoices]);
-
-  // Update invoices when selectedCustomer changes
-  useEffect(() => {
-    if (selectedCustomer) {
-      const fetchAndFilter = async () => {
-        const name = selectedCustomer.name || null;
-        const contact = selectedCustomer.contact || null;
-        await fetchInvoices(name, contact, invoiceQuery || null, paymentStatusFilter || null);
-      };
-      fetchAndFilter();
-    }
   }, [selectedCustomer, invoiceQuery, paymentStatusFilter, fetchInvoices]);
 
   // Apply only date filters (when no invoice search is provided)
@@ -2183,50 +2170,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                                 <TableCell sx={cellSx}>{priceList || '-'}</TableCell>
                                 <TableCell align="right" sx={cellSx}>{inv.totalQuantity || (inv.items || []).reduce((s, i) => s + (Number(i.quantity) || 0), 0)}</TableCell>
                                 <TableCell sx={cellSx}>{inv.paymentMethod || '-'}</TableCell>
-                                <TableCell sx={cellSx}>
-                                  <Tooltip
-                                    open={tooltipOpen && tooltipAnchorEl === `status-${inv._id}`}
-                                    title={(() => {
-                                      if (inv.paymentStatus === 'Partial Paid') {
-                                        const parts = Array.isArray(inv.paymentParts) && inv.paymentParts.length > 0
-                                          ? inv.paymentParts
-                                          : [{ amount: inv.paidAmount || 0, date: inv.createdAt }];
-                                        const partsText = parts.map((p, i) => 
-                                          `Payment ${i + 1}: Rs. ${Number(p.amount || 0).toLocaleString()} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})`
-                                        ).join('\n');
-                                        const remaining = Math.max(0, (inv.netAmount || 0) - (inv.paidAmount || 0));
-                                        return `${partsText}\n\nRemaining: Rs. ${remaining.toLocaleString()}`;
-                                      } else if (inv.paymentStatus === 'Credit') {
-                                        return `Due Date: ${inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'Not set'}`;
-                                      } else if (inv.paymentStatus === 'Unpaid') {
-                                        return `Remaining: Rs. ${inv.netAmount ? Number(inv.netAmount).toLocaleString() : '0'}`;
-                                      }
-                                      return '';
-                                    })()}
-                                    arrow
-                                    onClose={() => setTooltipOpen(false)}
-                                  >
-                                    <Box sx={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }} onClick={() => {
-                                      setTooltipAnchorEl(`status-${inv._id}`);
-                                      setTooltipOpen(true);
-                                      setTimeout(() => setTooltipOpen(false), 10000);
-                                    }}>
-                                      <Chip
-                                        label={inv.paymentStatus || '-'}
-                                        size="small"
-                                        color={(() => {
-                                          switch (inv.paymentStatus) {
-                                            case 'Paid': return 'success';
-                                            case 'Partial Paid': return 'warning';
-                                            case 'Credit': return 'info';
-                                            case 'Unpaid': return 'error';
-                                            default: return 'default';
-                                          }
-                                        })()}
-                                      />
-                                    </Box>
-                                  </Tooltip>
-                                </TableCell>
+                                <TableCell sx={cellSx}>{inv.paymentStatus || '-'}</TableCell>
                                 <TableCell align="center">
                                   {underWarranty ? (
                                     <Tooltip title={warrantyTooltip} arrow>

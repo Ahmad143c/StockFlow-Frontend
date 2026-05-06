@@ -901,46 +901,40 @@ const AdminSalesReport = () => {
                       </TableCell>
                       <TableCell sx={cellSx}>
                         <Tooltip
-                          open={tooltipOpen && tooltipAnchorEl === `status-${sale._id}`}
                           title={(() => {
                             if (sale.paymentStatus === 'Partial Paid') {
                               const parts = Array.isArray(sale.paymentParts) && sale.paymentParts.length > 0
                                 ? sale.paymentParts
                                 : [{ amount: sale.paidAmount || 0, date: sale.createdAt }];
-                              const partsText = parts.map((p, i) => 
+                              const partsHtml = parts.map((p, i) =>
                                 `Payment ${i + 1}: Rs. ${Number(p.amount || 0).toLocaleString()} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})`
-                              ).join('\n');
-                              const remaining = Math.max(0, (sale.netAmount || 0) - (sale.paidAmount || 0));
-                              return `${partsText}\n\nRemaining: Rs. ${remaining.toLocaleString()}`;
+                              ).join('<br>');
+                              const remaining = Math.max(0, (sale.netAmount || sale.totalAmount || 0) - (sale.paidAmount || 0));
+                              return (
+                                <div>
+                                  <div>{partsHtml}</div>
+                                  <div><strong>Remaining: Rs. {remaining.toLocaleString()}</strong></div>
+                                </div>
+                              );
                             } else if (sale.paymentStatus === 'Credit') {
-                              return `Due Date: ${sale.dueDate ? new Date(sale.dueDate).toLocaleDateString() : 'Not set'}`;
+                              return (
+                                <div>
+                                  <div>Due Date: {sale.dueDate ? new Date(sale.dueDate).toLocaleDateString() : '-'}</div>
+                                  <div><strong>Amount: Rs. {(sale.netAmount || sale.totalAmount || 0).toLocaleString()}</strong></div>
+                                </div>
+                              );
                             } else if (sale.paymentStatus === 'Unpaid') {
-                              return `Remaining: Rs. ${sale.netAmount ? Number(sale.netAmount).toLocaleString() : '0'}`;
+                              return (
+                                <div>
+                                  <div><strong>Unpaid Amount: Rs. {(sale.netAmount || sale.totalAmount || 0).toLocaleString()}</strong></div>
+                                </div>
+                              );
                             }
-                            return '';
+                            return null;
                           })()}
                           arrow
-                          onClose={() => setTooltipOpen(false)}
                         >
-                          <Box sx={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }} onClick={() => {
-                            setTooltipAnchorEl(`status-${sale._id}`);
-                            setTooltipOpen(true);
-                            setTimeout(() => setTooltipOpen(false), 10000);
-                          }}>
-                            <Chip
-                              label={sale.paymentStatus}
-                              size="small"
-                              color={(() => {
-                                switch (sale.paymentStatus) {
-                                  case 'Paid': return 'success';
-                                  case 'Partial Paid': return 'warning';
-                                  case 'Credit': return 'info';
-                                  case 'Unpaid': return 'error';
-                                  default: return 'default';
-                                }
-                              })()}
-                            />
-                          </Box>
+                          <Box sx={{ cursor: 'pointer' }}>{sale.paymentStatus}</Box>
                         </Tooltip>
                       </TableCell>
                       <TableCell sx={cellSx}>
