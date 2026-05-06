@@ -198,8 +198,8 @@ export function generateInvoiceHTML(invoice, products = []) {
             /* PRINT STYLES - 80mm Thermal Printer */
             @media print {
               @page {
-                size: 80mm 200mm;
-                margin: 2mm;
+                size: 80mm auto;
+                margin: 0mm;
               }
               
               html {
