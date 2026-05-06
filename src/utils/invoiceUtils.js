@@ -79,13 +79,30 @@ export function generateInvoiceHTML(invoice, products = []) {
           /* ── Reset ─────────────────────────────────────────────── */
           * { margin: 0; padding: 0; box-sizing: border-box; }
 
-          /* ── BASE (shared screen + print) ──────────────────────── */
-          body {
+          /* ── SCREEN: outer shell ───────────────────────────────── */
+          html, body {
+            width: 100%;
+            background: #e8e8e8;
+          }
+
+          /*
+            .receipt is the actual white card.
+            It is always 272px (≈72mm) wide — the thermal paper width.
+            JS scales it down if the viewport is narrower.
+            transform-origin: top center keeps it centered.
+          */
+          .receipt {
             font-family: 'Times New Roman', Times, serif;
             font-size: 18px;
             line-height: 1.45;
             color: #000;
             background: #fff;
+            width: 272px;
+            margin: 0 auto;
+            padding: 8px 4px 12px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.18);
+            transform-origin: top center;
+            /* scale is set by JS below */
           }
 
           /* ── Header ────────────────────────────────────────────── */
@@ -166,80 +183,26 @@ export function generateInvoiceHTML(invoice, products = []) {
             font-weight: bold;
           }
 
-          /* ── SCREEN PREVIEW ────────────────────────────────────────
-             The receipt is designed for 72mm (≈272px) wide paper.
-             When shown inside a modal iframe that may be narrower,
-             we use a CSS scale() so it shrinks to fit without any
-             content being clipped. The outer wrapper stays 100% wide;
-             only the inner receipt card is scaled down.
-          ──────────────────────────────────────────────────────────── */
-          @media screen {
-            html {
-              background: #e8e8e8;
-              /* center the scaled receipt card */
-              display: flex;
-              justify-content: center;
-              min-height: 100%;
-            }
-
-            body {
-              /*
-                Fixed receipt width matching the thermal roll (72mm ≈ 272px).
-                transform-origin top center so scaling anchors to the top.
-                max-width: 100% + overflow visible lets the scale trick work.
-              */
-              width: 272px;
-              min-width: 272px;
-              padding: 8px 4px;
-              background: #fff;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-
-              /* 
-                KEY FIX: scale the receipt to fit the viewport width.
-                100vw / 272px gives a ratio that shrinks the card when the
-                modal is narrower than 272px, and keeps it 1:1 when wider.
-                clamp(0.6, ..., 1) prevents it from ever going below 60%
-                or above 100% scale.
-              */
-              transform-origin: top center;
-              transform: scale(min(1, calc((100vw - 32px) / 272px)));
-
-              /*
-                Because scale() doesn't affect layout flow, we use
-                margin-bottom with a negative value equal to the
-                scaled-away height so the page doesn't leave a gap.
-                JS below handles this dynamically.
-              */
-              margin: 0 auto;
-
-              /* shrink-wrap height so grey doesn't show below footer */
-              display: inline-block;
-              vertical-align: top;
-            }
-          }
-
           /* ── PRINT — BlackCopper BC-88AC 80mm Thermal ──────────── */
           @media print {
             @page {
-              size: 80mm auto;   /* auto height = no blank second page */
+              size: 80mm auto;
               margin: 2mm 3mm;
             }
 
-            html {
+            html, body {
               background: white;
-              display: block;
+              width: 100%;
             }
 
-            body {
-              display: block;
-              width: 100%;
-              margin: 0;
-              padding: 0;
-              font-family: 'Times New Roman', Times, serif;
-              font-size: 18px;
-              /* ensure no transform is applied during print */
+            /* Unwrap the .receipt card — print fills full page width */
+            .receipt {
+              width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              box-shadow: none !important;
               transform: none !important;
-              box-shadow: none;
+              font-size: 18px;
             }
 
             .header h1         { font-size: 20px; }
@@ -251,132 +214,155 @@ export function generateInvoiceHTML(invoice, products = []) {
             .payment-info .row.bold   { font-size: 17px; }
             .footer            { font-size: 16px; }
 
-            tr                 { page-break-inside: avoid; }
-            .footer            { page-break-after: avoid; }
+            tr     { page-break-inside: avoid; }
+            .footer { page-break-after: avoid; }
           }
         </style>
       </head>
       <body>
 
-        <!-- HEADER -->
-        <div class="header">
-          <h1>New Adil Electric Concern</h1>
-          <p>4-B, Jamiat Center, Shah Alam Market</p>
-          <p>Lahore, Pakistan</p>
-          <p>Ph: 0333-4263733</p>
-          <p>info@adilelectric.com | e-roshni.com</p>
-        </div>
+        <!-- All receipt content lives inside .receipt so JS can scale it -->
+        <div class="receipt" id="receipt">
 
-        <!-- INVOICE META -->
-        <div class="invoice-info">
-          <div><strong>Invoice #:</strong> ${(invoice._id || '').toString().slice(-6)}</div>
-          <div><strong>Date:</strong> ${new Date(invoice.createdAt || invoice.date).toLocaleDateString()} &nbsp;<strong>Time:</strong> ${new Date(invoice.createdAt || invoice.date).toLocaleTimeString()}</div>
-          <div><strong>Customer:</strong> ${invoice.customerName || '-'}</div>
-          <div><strong>Contact:</strong> ${invoice.customerContact || '-'}</div>
-          <div><strong>Payment:</strong> ${invoice.paymentMethod || '-'} &nbsp;<strong>Status:</strong> ${invoice.paymentStatus || '-'}${invoice.paymentStatus === 'Credit' && invoice.dueDate ? `<br><strong>Due:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}` : ''}</div>
-        </div>
+          <!-- HEADER -->
+          <div class="header">
+            <h1>New Adil Electric Concern</h1>
+            <p>4-B, Jamiat Center, Shah Alam Market</p>
+            <p>Lahore, Pakistan</p>
+            <p>Ph: 0333-4263733</p>
+            <p>info@adilelectric.com | e-roshni.com</p>
+          </div>
 
-        <!-- ITEMS TABLE -->
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Item</th>
-              <th class="text-right">Qty</th>
-              <th class="text-right">Rate</th>
-              ${hasRefunds ? '<th class="text-right">Refund</th>' : ''}
-              <th class="text-right">Wrnty</th>
-              ${itemsHaveDiscount ? '<th class="text-right">Disc</th>' : ''}
-              <th class="text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(invoice.items || []).map((i, idx) => {
-              const warrantyString = warrantyForItem(i);
-              const key = String(i.productId || i.SKU || i._id || '');
-              const origQty      = Number(i.quantity) || 0;
-              const refundedQty  = Number(refundQtyMap.get(key) || 0);
-              const refundAmt    = Number(refundAmtMap.get(key) || 0);
-              const remainingQty = Math.max(0, origQty - refundedQty);
-              const itemSubtotal = ((Number(i.perPiecePrice) || 0) * remainingQty) - (Number(i.discount) || 0);
-              return `
+          <!-- INVOICE META -->
+          <div class="invoice-info">
+            <div><strong>Invoice #:</strong> ${(invoice._id || '').toString().slice(-6)}</div>
+            <div><strong>Date:</strong> ${new Date(invoice.createdAt || invoice.date).toLocaleDateString()} &nbsp;<strong>Time:</strong> ${new Date(invoice.createdAt || invoice.date).toLocaleTimeString()}</div>
+            <div><strong>Customer:</strong> ${invoice.customerName || '-'}</div>
+            <div><strong>Contact:</strong> ${invoice.customerContact || '-'}</div>
+            <div><strong>Payment:</strong> ${invoice.paymentMethod || '-'} &nbsp;<strong>Status:</strong> ${invoice.paymentStatus || '-'}${invoice.paymentStatus === 'Credit' && invoice.dueDate ? `<br><strong>Due:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}` : ''}</div>
+          </div>
+
+          <!-- ITEMS TABLE -->
+          <table>
+            <thead>
               <tr>
-                <td>${idx + 1}</td>
-                <td>${splitProductName(i.productName)}</td>
-                <td class="text-right">${origQty}${refundedQty ? `<br>(-${refundedQty})` : ''}</td>
-                <td class="text-right">${Number(i.perPiecePrice || 0).toLocaleString()}</td>
-                ${hasRefunds ? `<td class="text-right">${refundAmt ? 'Rs.' + refundAmt.toLocaleString() : '-'}</td>` : ''}
-                <td class="text-right">${warrantyString}</td>
-                ${itemsHaveDiscount ? `<td class="text-right">${i.discount || 0}</td>` : ''}
-                <td class="text-right">${Number(itemSubtotal).toLocaleString()}</td>
-              </tr>`;
-            }).join('')}
+                <th>#</th>
+                <th>Item</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Rate</th>
+                ${hasRefunds ? '<th class="text-right">Refund</th>' : ''}
+                <th class="text-right">Wrnty</th>
+                ${itemsHaveDiscount ? '<th class="text-right">Disc</th>' : ''}
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(invoice.items || []).map((i, idx) => {
+                const warrantyString = warrantyForItem(i);
+                const key = String(i.productId || i.SKU || i._id || '');
+                const origQty      = Number(i.quantity) || 0;
+                const refundedQty  = Number(refundQtyMap.get(key) || 0);
+                const refundAmt    = Number(refundAmtMap.get(key) || 0);
+                const remainingQty = Math.max(0, origQty - refundedQty);
+                const itemSubtotal = ((Number(i.perPiecePrice) || 0) * remainingQty) - (Number(i.discount) || 0);
+                return `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td>${splitProductName(i.productName)}</td>
+                  <td class="text-right">${origQty}${refundedQty ? `<br>(-${refundedQty})` : ''}</td>
+                  <td class="text-right">${Number(i.perPiecePrice || 0).toLocaleString()}</td>
+                  ${hasRefunds ? `<td class="text-right">${refundAmt ? 'Rs.' + refundAmt.toLocaleString() : '-'}</td>` : ''}
+                  <td class="text-right">${warrantyString}</td>
+                  ${itemsHaveDiscount ? `<td class="text-right">${i.discount || 0}</td>` : ''}
+                  <td class="text-right">${Number(itemSubtotal).toLocaleString()}</td>
+                </tr>`;
+              }).join('')}
 
-            <tr class="total-row">
-              <td colspan="${5 + (hasRefunds ? 1 : 0) + (itemsHaveDiscount ? 1 : 0)}"><strong>Total</strong></td>
-              <td class="text-right"><strong>Rs.${Number(totalWithoutDiscount).toLocaleString()}</strong></td>
-            </tr>
-          </tbody>
-        </table>
+              <tr class="total-row">
+                <td colspan="${5 + (hasRefunds ? 1 : 0) + (itemsHaveDiscount ? 1 : 0)}"><strong>Total</strong></td>
+                <td class="text-right"><strong>Rs.${Number(totalWithoutDiscount).toLocaleString()}</strong></td>
+              </tr>
+            </tbody>
+          </table>
 
-        <!-- PAYMENT SUMMARY -->
-        <div class="payment-info">
-          ${(() => {
-            const paidVal = invoice.paymentMethod === 'Cash'
-              ? (invoice.cashAmount || invoice.paidAmount || 0)
-              : (invoice.paidAmount || 0);
-            const changeVal   = invoice.changeAmount || 0;
-            const discountVal = invoice.discountAmount || 0;
-            const grossTotal  = netAmount + discountVal;
-            const totalRefundAmount = (invoice.refunds || []).reduce(
-              (s, r) => s + (Number(r.totalRefundAmount) || 0), 0
-            );
+          <!-- PAYMENT SUMMARY -->
+          <div class="payment-info">
+            ${(() => {
+              const paidVal = invoice.paymentMethod === 'Cash'
+                ? (invoice.cashAmount || invoice.paidAmount || 0)
+                : (invoice.paidAmount || 0);
+              const changeVal   = invoice.changeAmount || 0;
+              const discountVal = invoice.discountAmount || 0;
+              const grossTotal  = netAmount + discountVal;
+              const totalRefundAmount = (invoice.refunds || []).reduce(
+                (s, r) => s + (Number(r.totalRefundAmount) || 0), 0
+              );
 
-            let extra = '';
-            if (invoice.paymentStatus === 'Partial Paid') {
-              const remaining = Math.max(0, netAmount - (invoice.paidAmount || 0));
-              const parts = Array.isArray(invoice.paymentParts) && invoice.paymentParts.length > 0
-                ? invoice.paymentParts
-                : [{ amount: paidVal, date: new Date(invoice.createdAt || invoice.date).toISOString().split('T')[0] }];
-              const partsHtml = parts.map((p, i2) =>
-                `<div class="row"><span>Payment ${i2 + 1} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})</span><span>Rs. ${Number(p.amount || 0).toLocaleString()}</span></div>`
-              ).join('');
-              extra = `${partsHtml}<div class="row bold"><span>Remaining</span><span>Rs. ${remaining.toLocaleString()}</span></div>`;
-            } else if (invoice.paymentStatus === 'Credit') {
-              extra = `<div class="row"><span>Due Date</span><span>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}</span></div>`;
-            }
+              let extra = '';
+              if (invoice.paymentStatus === 'Partial Paid') {
+                const remaining = Math.max(0, netAmount - (invoice.paidAmount || 0));
+                const parts = Array.isArray(invoice.paymentParts) && invoice.paymentParts.length > 0
+                  ? invoice.paymentParts
+                  : [{ amount: paidVal, date: new Date(invoice.createdAt || invoice.date).toISOString().split('T')[0] }];
+                const partsHtml = parts.map((p, i2) =>
+                  `<div class="row"><span>Payment ${i2 + 1} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})</span><span>Rs. ${Number(p.amount || 0).toLocaleString()}</span></div>`
+                ).join('');
+                extra = `${partsHtml}<div class="row bold"><span>Remaining</span><span>Rs. ${remaining.toLocaleString()}</span></div>`;
+              } else if (invoice.paymentStatus === 'Credit') {
+                extra = `<div class="row"><span>Due Date</span><span>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}</span></div>`;
+              }
 
-            return `
-              ${discountVal > 0 ? `<div class="row"><span>Discount</span><span>Rs. ${Number(discountVal).toLocaleString()}</span></div>` : ''}
-              <div class="row bold"><span>Total Amount</span><span>Rs. ${Number(grossTotal).toLocaleString()}</span></div>
-              <div class="row bold"><span>Paid Amount</span><span>Rs. ${Number(paidVal).toLocaleString()}</span></div>
-              ${totalRefundAmount > 0 ? `<div class="row"><span>Refunded</span><span>Rs. ${totalRefundAmount.toLocaleString()}</span></div>` : ''}
-              <div class="row"><span>Change</span><span>Rs. ${Number(changeVal).toLocaleString()}</span></div>
-              ${extra}
-            `;
-          })()}
-        </div>
+              return `
+                ${discountVal > 0 ? `<div class="row"><span>Discount</span><span>Rs. ${Number(discountVal).toLocaleString()}</span></div>` : ''}
+                <div class="row bold"><span>Total Amount</span><span>Rs. ${Number(grossTotal).toLocaleString()}</span></div>
+                <div class="row bold"><span>Paid Amount</span><span>Rs. ${Number(paidVal).toLocaleString()}</span></div>
+                ${totalRefundAmount > 0 ? `<div class="row"><span>Refunded</span><span>Rs. ${totalRefundAmount.toLocaleString()}</span></div>` : ''}
+                <div class="row"><span>Change</span><span>Rs. ${Number(changeVal).toLocaleString()}</span></div>
+                ${extra}
+              `;
+            })()}
+          </div>
 
-        <!-- FOOTER -->
-        <div class="footer">*** Thank you for your business! ***</div>
+          <!-- FOOTER -->
+          <div class="footer">*** Thank you for your business! ***</div>
 
-        <!--
-          Adjust body margin-bottom so the grey page background doesn't
-          show below the scaled receipt card. Only runs on screen.
-        -->
+        </div><!-- /.receipt -->
+
         <script>
           (function () {
-            if (typeof window === 'undefined') return;
-            function adjustHeight() {
-              var vw = window.innerWidth;
-              var receiptW = 272;
-              var scale = Math.min(1, (vw - 32) / receiptW);
-              var bodyH = document.body.scrollHeight;
-              // shrink the html element to the scaled height
-              document.documentElement.style.height = Math.ceil(bodyH * scale) + 'px';
+            var RECEIPT_W = 272; // px — matches .receipt width above
+
+            function scaleReceipt() {
+              var el = document.getElementById('receipt');
+              if (!el) return;
+
+              // Available width = viewport minus a small gutter (16px each side)
+              var available = window.innerWidth - 32;
+
+              if (available >= RECEIPT_W) {
+                // Viewport is wide enough — no scaling needed
+                el.style.transform = 'none';
+                document.body.style.height = '';
+              } else {
+                // Scale DOWN so receipt fits without horizontal scroll/clip
+                var scale = available / RECEIPT_W;
+                el.style.transform = 'scale(' + scale + ')';
+                el.style.transformOrigin = 'top center';
+
+                /*
+                  After scaling, the element still occupies its natural
+                  272px × naturalHeight in layout space, leaving a big
+                  gap below. Correct the body height so it matches the
+                  visually-scaled height.
+                */
+                var naturalH = el.getBoundingClientRect().height / scale;
+                document.body.style.height = Math.ceil(naturalH * scale) + 'px';
+              }
             }
-            adjustHeight();
-            window.addEventListener('resize', adjustHeight);
+
+            // Run on load and on every resize
+            scaleReceipt();
+            window.addEventListener('resize', scaleReceipt);
           })();
         </script>
 
