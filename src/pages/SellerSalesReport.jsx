@@ -816,6 +816,7 @@ const SellerSalesReport = () => {
                       </TableCell>
                       <TableCell sx={cellSx}>
                         <Tooltip
+                          open={tooltipOpen && tooltipAnchorEl === `status-${sale._id}`}
                           title={(() => {
                             if (sale.paymentStatus === 'Partial Paid') {
                               const parts = Array.isArray(sale.paymentParts) && sale.paymentParts.length > 0
@@ -848,6 +849,7 @@ const SellerSalesReport = () => {
                             return null;
                           })()}
                           arrow
+                          onClose={() => setTooltipOpen(false)}
                         >
                           <Chip
                             label={sale.paymentStatus}
@@ -859,6 +861,41 @@ const SellerSalesReport = () => {
                               sale.paymentStatus === 'Unpaid' ? 'error' : 'default'
                             }
                             sx={{ cursor: 'pointer', fontWeight: 500 }}
+                            onClick={() => {
+                              setTooltipContent(() => {
+                                if (sale.paymentStatus === 'Partial Paid') {
+                                  const parts = Array.isArray(sale.paymentParts) && sale.paymentParts.length > 0
+                                    ? sale.paymentParts
+                                    : [{ amount: sale.paidAmount || 0, date: sale.createdAt }];
+                                  const partsHtml = parts.map((p, i) =>
+                                    `Payment ${i + 1}: Rs. ${Number(p.amount || 0).toLocaleString()} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})`
+                                  ).join('<br>');
+                                  const remaining = Math.max(0, (sale.netAmount || sale.totalAmount || 0) - (sale.paidAmount || 0));
+                                  return (
+                                    <div>
+                                      <div>{partsHtml}</div>
+                                      <div><strong>Remaining: Rs. {remaining.toLocaleString()}</strong></div>
+                                    </div>
+                                  );
+                                } else if (sale.paymentStatus === 'Credit') {
+                                  return (
+                                    <div>
+                                      <div>Due Date: {sale.dueDate ? new Date(sale.dueDate).toLocaleDateString() : '-'}</div>
+                                      <div><strong>Amount: Rs. ${(sale.netAmount || sale.totalAmount || 0).toLocaleString()}</strong></div>
+                                    </div>
+                                  );
+                                } else if (sale.paymentStatus === 'Unpaid') {
+                                  return (
+                                    <div>
+                                      <div><strong>Unpaid Amount: Rs. ${(sale.netAmount || sale.totalAmount || 0).toLocaleString()}</strong></div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              });
+                              setTooltipAnchorEl(`status-${sale._id}`);
+                              setTooltipOpen(true);
+                            }}
                           />
                         </Tooltip>
                       </TableCell>
