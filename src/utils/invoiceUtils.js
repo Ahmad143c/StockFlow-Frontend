@@ -103,7 +103,7 @@ export function generateInvoiceHTML(invoice, products = []) {
             line-height: 1.45;
             color: #000;
             background: #fff;
-            width: 272px;
+            width: 100%;
             padding: 8px 6px 12px;
             box-shadow: 0 1px 8px rgba(0,0,0,0.15);
             overflow: hidden;
@@ -339,20 +339,8 @@ export function generateInvoiceHTML(invoice, products = []) {
 
         <script>
           (function () {
-            var RECEIPT_W = 272;
-
-            function applyZoom() {
-              var el = document.getElementById('receipt');
-              if (!el) return;
-              var available = window.innerWidth - 32;
-              var zoom = available < RECEIPT_W
-                ? (available / RECEIPT_W)
-                : 1;
-              el.style.zoom = zoom;
-            }
-
-            applyZoom();
-            window.addEventListener('resize', applyZoom);
+            var el = document.getElementById('receipt');
+            if (el) el.style.zoom = 1;
           })();
         </script>
 
