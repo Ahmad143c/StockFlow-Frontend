@@ -76,78 +76,50 @@ export function generateInvoiceHTML(invoice, products = []) {
         <title>Invoice #${(invoice._id || '').toString().slice(-6)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-          /* ── Reset ─────────────────────────────────────────────── */
           * { margin: 0; padding: 0; box-sizing: border-box; }
 
-          /* ── SCREEN: page shell ─────────────────────────────────── */
+          /* FIX 1: Screen preview - proper centering without overflow */
           html {
-            background: #e8e8e8;
-            /*
-              overflow:hidden on html stops the browser from showing
-              any content that extends beyond the viewport width.
-              This is the key fix for the right-side overflow issue.
-            */
-            overflow-x: hidden;
-          }
-
-          body {
-            /*
-              width: 100vw ensures body never exceeds viewport.
-              overflow:hidden clips anything inside that goes wider.
-            */
-            width: 100vw;
-            overflow-x: hidden;
             background: #e8e8e8;
             display: flex;
             justify-content: center;
-            padding: 8px 0 16px;
+            min-height: 100vh;
           }
 
-          /* ── Receipt card ───────────────────────────────────────── */
-          /*
-            STRATEGY: use CSS zoom (not transform: scale).
-            zoom actually shrinks layout space too, so the page
-            height collapses correctly and nothing overflows.
-            zoom is supported in all Chromium-based browsers (Chrome, Edge)
-            which is what your app runs in.
-          */
+          body {
+            background: #e8e8e8;
+            display: flex;
+            justify-content: center;
+            padding: 16px 12px;
+            margin: 0;
+            width: 100%;
+          }
+
+          /* Receipt card - fixed 272px (≈72mm) */
           .receipt {
             font-family: 'Times New Roman', Times, serif;
             font-size: 18px;
             line-height: 1.45;
             color: #000;
             background: #fff;
-            /*
-              Fixed at 272px (≈72mm). JS sets zoom so it shrinks
-              to fit narrower viewports while the layout adapts.
-            */
             width: 272px;
             padding: 8px 6px 12px;
             box-shadow: 0 1px 8px rgba(0,0,0,0.15);
-            /* zoom is set dynamically by JS below */
           }
 
-          /* ── Header ────────────────────────────────────────────── */
           .header {
             text-align: center;
             padding-bottom: 3mm;
             margin-bottom: 3mm;
             border-bottom: 2px dashed #000;
           }
-          .header h1 {
-            font-size: 20px;
-            font-weight: bold;
-            letter-spacing: 0.3px;
-            margin-bottom: 2px;
-          }
+          .header h1 { font-size: 20px; font-weight: bold; margin-bottom: 2px; }
           .header p { font-size: 16px; margin: 1px 0; }
 
-          /* ── Invoice meta ──────────────────────────────────────── */
           .invoice-info { margin: 2mm 0; }
           .invoice-info div { font-size: 16px; margin: 1.5mm 0; }
           .invoice-info strong { font-weight: bold; }
 
-          /* ── Items table ───────────────────────────────────────── */
           table {
             width: 100%;
             border-collapse: collapse;
@@ -178,7 +150,6 @@ export function generateInvoiceHTML(invoice, products = []) {
             padding: 2mm 1mm;
           }
 
-          /* ── Payment summary ───────────────────────────────────── */
           .payment-info {
             margin-top: 2mm;
             padding-top: 2mm;
@@ -195,7 +166,6 @@ export function generateInvoiceHTML(invoice, products = []) {
             font-weight: bold;
           }
 
-          /* ── Footer ────────────────────────────────────────────── */
           .footer {
             text-align: center;
             margin-top: 3mm;
@@ -205,52 +175,68 @@ export function generateInvoiceHTML(invoice, products = []) {
             font-weight: bold;
           }
 
-          /* ── PRINT — BlackCopper BC-88AC 80mm Thermal ──────────── */
+          /* FIX 2: PRINT - 80mm thermal printer optimization */
           @media print {
             @page {
               size: 80mm auto;
-              margin: 2mm 3mm;
+              margin: 2mm 2mm;
             }
 
-            html {
+            html, body {
               background: white;
-              overflow: visible;
+              width: 100%;
+              margin: 0;
+              padding: 0;
+              display: block;
             }
 
             body {
-              width: 100%;
-              overflow: visible;
-              display: block;
               padding: 0;
-              background: white;
             }
 
             .receipt {
               width: 100% !important;
-              padding: 0 !important;
+              max-width: 100%;
+              padding: 4px 3px !important;
+              margin: 0 !important;
               box-shadow: none !important;
-              zoom: 1 !important;           /* reset zoom for print */
-              font-size: 18px;
+              /* NO zoom - let printer handle actual size */
             }
 
-            .header h1         { font-size: 20px; }
-            .header p          { font-size: 16px; }
-            .invoice-info div  { font-size: 16px; }
-            th, td             { font-size: 16px; }
-            .total-row td      { font-size: 17px; }
-            .payment-info .row        { font-size: 16px; }
-            .payment-info .row.bold   { font-size: 17px; }
-            .footer            { font-size: 16px; }
+            /* Keep consistent font sizes */
+            .header h1 { font-size: 18px; }
+            .header p { font-size: 14px; }
+            .invoice-info div { font-size: 14px; }
+            th, td { font-size: 14px; }
+            .total-row td { font-size: 15px; }
+            .payment-info .row { font-size: 14px; }
+            .payment-info .row.bold { font-size: 15px; }
+            .footer { font-size: 14px; }
 
-            tr      { page-break-inside: avoid; }
-            .footer { page-break-after: avoid; }
+            /* Prevent page breaks inside elements - this fixes height issue */
+            tr, .payment-info, .footer, .header, .invoice-info {
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            
+            /* Ensure no extra blank pages */
+            body, html {
+              height: auto;
+              min-height: auto;
+            }
+          }
+
+          /* Screen zoom adjustment - prevents horizontal scroll */
+          @media screen and (max-width: 320px) {
+            .receipt {
+              transform: scale(0.95);
+              transform-origin: center top;
+            }
           }
         </style>
       </head>
       <body>
-
         <div class="receipt" id="receipt">
-
           <!-- HEADER -->
           <div class="header">
             <h1>New Adil Electric Concern</h1>
@@ -352,37 +338,7 @@ export function generateInvoiceHTML(invoice, products = []) {
 
           <!-- FOOTER -->
           <div class="footer">*** Thank you for your business! ***</div>
-
-        </div><!-- /.receipt -->
-
-        <script>
-          (function () {
-            var RECEIPT_W = 272; // must match .receipt width in CSS
-
-            function applyZoom() {
-              var el = document.getElementById('receipt');
-              if (!el) return;
-
-              /*
-                Use CSS zoom — unlike transform:scale(), zoom actually
-                shrinks the element's layout box, so the page height
-                and body width adjust correctly. No overflow, no gap.
-
-                Available width = viewport minus 16px padding each side.
-              */
-              var available = window.innerWidth - 32;
-              var zoom = available < RECEIPT_W
-                ? (available / RECEIPT_W)
-                : 1;
-
-              el.style.zoom = zoom;
-            }
-
-            applyZoom();
-            window.addEventListener('resize', applyZoom);
-          })();
-        </script>
-
+        </div>
       </body>
     </html>
   `;
