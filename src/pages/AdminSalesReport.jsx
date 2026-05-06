@@ -920,13 +920,13 @@ const AdminSalesReport = () => {
                               return (
                                 <div>
                                   <div>Due Date: {sale.dueDate ? new Date(sale.dueDate).toLocaleDateString() : '-'}</div>
-                                  <div><strong>Amount: Rs. {(sale.netAmount || sale.totalAmount || 0).toLocaleString()}</strong></div>
+                                  <div><strong>Amount: Rs. ${(sale.netAmount || sale.totalAmount || 0).toLocaleString()}</strong></div>
                                 </div>
                               );
                             } else if (sale.paymentStatus === 'Unpaid') {
                               return (
                                 <div>
-                                  <div><strong>Unpaid Amount: Rs. {(sale.netAmount || sale.totalAmount || 0).toLocaleString()}</strong></div>
+                                  <div><strong>Unpaid Amount: Rs. ${(sale.netAmount || sale.totalAmount || 0).toLocaleString()}</strong></div>
                                 </div>
                               );
                             }
@@ -934,7 +934,17 @@ const AdminSalesReport = () => {
                           })()}
                           arrow
                         >
-                          <Box sx={{ cursor: 'pointer' }}>{sale.paymentStatus}</Box>
+                          <Chip
+                            label={sale.paymentStatus}
+                            size="small"
+                            color={
+                              sale.paymentStatus === 'Paid' ? 'success' :
+                              sale.paymentStatus === 'Partial Paid' ? 'warning' :
+                              sale.paymentStatus === 'Credit' ? 'info' :
+                              sale.paymentStatus === 'Unpaid' ? 'error' : 'default'
+                            }
+                            sx={{ cursor: 'pointer', fontWeight: 500 }}
+                          />
                         </Tooltip>
                       </TableCell>
                       <TableCell sx={cellSx}>

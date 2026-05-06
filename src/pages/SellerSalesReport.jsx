@@ -849,7 +849,17 @@ const SellerSalesReport = () => {
                           })()}
                           arrow
                         >
-                          <Box sx={{ cursor: 'pointer' }}>{sale.paymentStatus}</Box>
+                          <Chip
+                            label={sale.paymentStatus}
+                            size="small"
+                            color={
+                              sale.paymentStatus === 'Paid' ? 'success' :
+                              sale.paymentStatus === 'Partial Paid' ? 'warning' :
+                              sale.paymentStatus === 'Credit' ? 'info' :
+                              sale.paymentStatus === 'Unpaid' ? 'error' : 'default'
+                            }
+                            sx={{ cursor: 'pointer', fontWeight: 500 }}
+                          />
                         </Tooltip>
                       </TableCell>
                       <TableCell sx={cellSx}>
