@@ -724,26 +724,26 @@ const SellerSaleEntry = () => {
   const handleResendEmail = async (sale) => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Check if customer email exists, if not use admin email
       const customerEmail = sale.customerEmail || sale.customer?.email || '';
       const adminEmail = 'adilelectric17@gmail.com';
-      
+
       // Send admin email as fallback if customer email is empty
-      const emailPayload = customerEmail ? {} : { 
-        fallbackToAdmin: true, 
+      const emailPayload = customerEmail ? {} : {
+        fallbackToAdmin: true,
         adminEmail: adminEmail,
         reason: 'Customer email not provided'
       };
-      
-      const emailRes = await API.post(`/sales/${sale._id}/resend-email`, emailPayload, { 
+
+      const emailRes = await API.post(`/sales/${sale._id}/resend-email`, emailPayload, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 90000 // 90 seconds timeout for email operations
       });
       const returnedSale = emailRes.data.sale || {};
       const paid = returnedSale.paymentMethod === 'Cash' ? (returnedSale.cashAmount || 0) : (returnedSale.paidAmount || 0);
       const change = returnedSale.changeAmount || 0;
-      
+
       // Show appropriate success message based on who received the email
       const emailRecipient = customerEmail ? 'customer' : 'admin';
       setSuccess(`Email resent successfully to ${emailRecipient} (Paid: Rs. ${paid.toLocaleString()}, Change: Rs. ${change.toLocaleString()})${!customerEmail ? ' - Admin email used as fallback' : ''}`);
@@ -852,190 +852,190 @@ const SellerSaleEntry = () => {
                   return (
                     <Card key={idx} elevation={2} sx={{ mb: 2, borderRadius: 2, border: `1px solid ${darkMode ? '#333' : '#e0e0e0'}`, bgcolor: darkMode ? '#1e1e1e' : '#ffffff', transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 4 } }}>
                       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Chip label={`#${idx + 1}`} size="small" sx={{ bgcolor: 'primary.main', color: 'white', fontWeight: 600 }} />
-                          {prod && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: stockColor }} />}
-                          {prod && warrantyMonths > 0 && warrantyExpiry && (
-                            <Chip icon={<ShieldIcon sx={{ fontSize: 14 }} />} label={warrantyMonths >= 12 ? `${(warrantyMonths / 12).toFixed(1).replace(/\.0$/, '')}Y` : `${warrantyMonths}M`} size="small" color="success" sx={{ height: 22, fontSize: '0.7rem' }} />
-                          )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip label={`#${idx + 1}`} size="small" sx={{ bgcolor: 'primary.main', color: 'white', fontWeight: 600 }} />
+                            {prod && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: stockColor }} />}
+                            {prod && warrantyMonths > 0 && warrantyExpiry && (
+                              <Chip icon={<ShieldIcon sx={{ fontSize: 14 }} />} label={warrantyMonths >= 12 ? `${(warrantyMonths / 12).toFixed(1).replace(/\.0$/, '')}Y` : `${warrantyMonths}M`} size="small" color="success" sx={{ height: 22, fontSize: '0.7rem' }} />
+                            )}
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {itemSubtotal > 0 && (
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'success.main', fontFeatureSettings: '"tnum"' }}>
+                                Rs. {itemSubtotal.toLocaleString()}
+                              </Typography>
+                            )}
+                            <IconButton size="small" color="error" onClick={() => removeItem(idx)} disabled={items.length === 1} sx={{ ml: 0.5 }}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {itemSubtotal > 0 && (
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'success.main', fontFeatureSettings: '"tnum"' }}>
-                              Rs. {itemSubtotal.toLocaleString()}
-                            </Typography>
-                          )}
-                          <IconButton size="small" color="error" onClick={() => removeItem(idx)} disabled={items.length === 1} sx={{ ml: 0.5 }}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </Box>
-                      
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6} md={2}>
-                          <Tooltip title="Enter SKU or scan barcode to auto-populate product" arrow>
-                            <TextField
-                              label="SKU / Barcode"
-                              value={item.SKU || ''}
-                              onChange={e => handleItemChange(idx, 'SKU', e.target.value)}
-                              onBlur={e => handleItemChange(idx, 'SKU', e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleItemChange(idx, 'SKU', e.target.value);
-                                }
-                              }}
+
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6} md={2}>
+                            <Tooltip title="Enter SKU or scan barcode to auto-populate product" arrow>
+                              <TextField
+                                label="SKU / Barcode"
+                                value={item.SKU || ''}
+                                onChange={e => handleItemChange(idx, 'SKU', e.target.value)}
+                                onBlur={e => handleItemChange(idx, 'SKU', e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleItemChange(idx, 'SKU', e.target.value);
+                                  }
+                                }}
+                                fullWidth
+                              />
+                            </Tooltip>
+                          </Grid>
+                          <Grid item xs={12} sm={6} md={2}>
+                            <FormControl fullWidth>
+                              <InputLabel>Brand</InputLabel>
+                              <Select
+                                value={item.brand || ''}
+                                label="Brand"
+                                onChange={e => handleItemChange(idx, 'brand', e.target.value)}
+                              >
+                                <MenuItem value="">All Brands</MenuItem>
+                                {brands.map(b => <MenuItem key={b} value={b}>{b}</MenuItem>)}
+                              </Select>
+                            </FormControl>
+                          </Grid>
+                          <Grid item xs={12} sm={6} md={3}>
+                            <Autocomplete
+                              options={sortedProductsByBrandFor(item.brand, products)}
+                              getOptionLabel={(option) => option?.name ? `${option.name} (${option.SKU})` : ''}
+                              value={products.find(p => p._id === item.productId) || null}
+                              onChange={(_, val) => handleItemChange(idx, 'productId', val?._id || '')}
+                              renderInput={(params) => <TextField {...params} label="Search Product" placeholder="Type name or SKU" fullWidth />}
                               fullWidth
                             />
-                          </Tooltip>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={2}>
-                          <FormControl fullWidth>
-                            <InputLabel>Brand</InputLabel>
-                            <Select
-                              value={item.brand || ''}
-                              label="Brand"
-                              onChange={e => handleItemChange(idx, 'brand', e.target.value)}
-                            >
-                              <MenuItem value="">All Brands</MenuItem>
-                              {brands.map(b => <MenuItem key={b} value={b}>{b}</MenuItem>)}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                          <Autocomplete
-                            options={sortedProductsByBrandFor(item.brand, products)}
-                            getOptionLabel={(option) => option?.name ? `${option.name} (${option.SKU})` : ''}
-                            value={products.find(p => p._id === item.productId) || null}
-                            onChange={(_, val) => handleItemChange(idx, 'productId', val?._id || '')}
-                            renderInput={(params) => <TextField {...params} label="Search Product" placeholder="Type name or SKU" fullWidth />}
-                            fullWidth
-                          />
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={2}>
-                          <TextField
-                            label="Quantity"
-                            type="number"
-                            value={item.quantity || ''}
-                            onChange={e =>
-                              handleItemChange(
-                                idx,
-                                'quantity',
-                                Math.max(0, Number(e.target.value))
-                              )
-                            }
-                            onWheel={(e) => e.target.blur()}   // 👈 stops scroll from changing value
-                            fullWidth
-                            required
-                            sx={{
-                              '& input[type=number]': {
-                                MozAppearance: 'textfield',
-                                '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                                  WebkitAppearance: 'none',
-                                  margin: 0,
-                                },
-                              },
-                            }}
-                          />
-
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={2}>
-                          {(() => {
-                            const suggested = prod ? (Number(prod.sellingPerPiece) || 0) : 0;
-                            const priceVal = Number(item.perPiecePrice) || 0;
-                            const isBelow = prod && priceVal > 0 && suggested > 0 && priceVal < suggested;
-                            return (
-                              <TextField
-                                label="Price per Piece"
-                                type="number"
-                                value={item.perPiecePrice || ''}
-                                onChange={e =>
-                                  handleItemChange(idx, 'perPiecePrice', e.target.value)
-                                }
-                                onWheel={(e) => e.target.blur()}   // 👈 key line
-                                fullWidth
-                                required
-                                error={isBelow}
-                                helperText={
-                                  isBelow ? `Below suggested selling price Rs. ${suggested}` : ''
-                                }
-                                InputProps={{
-                                  inputProps: {
-                                    onWheel: (e) => e.target.blur(), // 👈 safest place in MUI
-                                    min: 0,
-                                  },
-                                  endAdornment: isBelow ? (
-                                    <InputAdornment position="end">
-                                      <Tooltip
-                                        title={`Below suggested selling price Rs. ${suggested}`}
-                                        arrow
-                                      >
-                                        <WarningAmberIcon color="error" />
-                                      </Tooltip>
-                                    </InputAdornment>
-                                  ) : null,
-                                }}
-                                sx={{
-                                  '& input[type=number]': {
-                                    MozAppearance: 'textfield',
-                                    '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                                      WebkitAppearance: 'none',
-                                      margin: 0,
-                                    },
-                                  },
-                                }}
-                              />
-                            );
-                          })()}
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={1}>
-                          <TextField
-                            label="Discount"
-                            type="number"
-                            value={item.discount || ''}
-                            onChange={e =>
-                              handleItemChange(
-                                idx,
-                                'discount',
-                                Math.max(0, Number(e.target.value))
-                              )
-                            }
-                            fullWidth
-                            InputProps={{
-                              inputProps: {
-                                onWheel: (e) => e.target.blur(), // 👈 stops scroll changing value
-                                min: 0,
-                              },
-                            }}
-                            sx={{
-                              '& input[type=number]': {
-                                MozAppearance: 'textfield',
-                                '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                                  WebkitAppearance: 'none',
-                                  margin: 0,
-                                },
-                              },
-                            }}
-                          />
-
-                        </Grid>
-                        {prod && (
-                          <Grid item xs={12} >
-                            <Box sx={{ p: 1, mt: 0.5, bgcolor: darkMode ? '#1a3a52' : '#e3f2fd', borderRadius: 1, borderLeft: `3px solid ${stockColor}` }}>
-                              <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <Inventory2Icon sx={{ fontSize: 14 }} /> Stock: {totalPcs} pcs (Cart: {ppc > 0 ? Math.floor(totalPcs / ppc) : 0}, Lose: {ppc > 0 ? (totalPcs % ppc) : totalPcs})
-                                {qty > 0 && ` → After Sale: ${remaining} pcs`}
-                              </Typography>
-                              {warrantyMonths > 0 && warrantyExpiry && (
-                                <Typography variant="body2" sx={{ mt: 0.5, color: 'success.main', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <ShieldIcon sx={{ fontSize: 14 }} /> Warranty: {warrantyMonths >= 12 ? `${(warrantyMonths / 12).toFixed(1).replace(/\.0$/, '')} Year(s)` : `${warrantyMonths} Month(s)`} (until {warrantyExpiry.toLocaleDateString()})
-                                </Typography>
-                              )}
-                            </Box>
                           </Grid>
-                        )}
-                      </Grid>
+                          <Grid item xs={12} sm={6} md={2}>
+                            <TextField
+                              label="Quantity"
+                              type="number"
+                              value={item.quantity || ''}
+                              onChange={e =>
+                                handleItemChange(
+                                  idx,
+                                  'quantity',
+                                  Math.max(0, Number(e.target.value))
+                                )
+                              }
+                              onWheel={(e) => e.target.blur()}   // 👈 stops scroll from changing value
+                              fullWidth
+                              required
+                              sx={{
+                                '& input[type=number]': {
+                                  MozAppearance: 'textfield',
+                                  '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                                    WebkitAppearance: 'none',
+                                    margin: 0,
+                                  },
+                                },
+                              }}
+                            />
+
+                          </Grid>
+                          <Grid item xs={12} sm={6} md={2}>
+                            {(() => {
+                              const suggested = prod ? (Number(prod.sellingPerPiece) || 0) : 0;
+                              const priceVal = Number(item.perPiecePrice) || 0;
+                              const isBelow = prod && priceVal > 0 && suggested > 0 && priceVal < suggested;
+                              return (
+                                <TextField
+                                  label="Price per Piece"
+                                  type="number"
+                                  value={item.perPiecePrice || ''}
+                                  onChange={e =>
+                                    handleItemChange(idx, 'perPiecePrice', e.target.value)
+                                  }
+                                  onWheel={(e) => e.target.blur()}   // 👈 key line
+                                  fullWidth
+                                  required
+                                  error={isBelow}
+                                  helperText={
+                                    isBelow ? `Below suggested selling price Rs. ${suggested}` : ''
+                                  }
+                                  InputProps={{
+                                    inputProps: {
+                                      onWheel: (e) => e.target.blur(), // 👈 safest place in MUI
+                                      min: 0,
+                                    },
+                                    endAdornment: isBelow ? (
+                                      <InputAdornment position="end">
+                                        <Tooltip
+                                          title={`Below suggested selling price Rs. ${suggested}`}
+                                          arrow
+                                        >
+                                          <WarningAmberIcon color="error" />
+                                        </Tooltip>
+                                      </InputAdornment>
+                                    ) : null,
+                                  }}
+                                  sx={{
+                                    '& input[type=number]': {
+                                      MozAppearance: 'textfield',
+                                      '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                                        WebkitAppearance: 'none',
+                                        margin: 0,
+                                      },
+                                    },
+                                  }}
+                                />
+                              );
+                            })()}
+                          </Grid>
+                          <Grid item xs={12} sm={6} md={1}>
+                            <TextField
+                              label="Discount"
+                              type="number"
+                              value={item.discount || ''}
+                              onChange={e =>
+                                handleItemChange(
+                                  idx,
+                                  'discount',
+                                  Math.max(0, Number(e.target.value))
+                                )
+                              }
+                              fullWidth
+                              InputProps={{
+                                inputProps: {
+                                  onWheel: (e) => e.target.blur(), // 👈 stops scroll changing value
+                                  min: 0,
+                                },
+                              }}
+                              sx={{
+                                '& input[type=number]': {
+                                  MozAppearance: 'textfield',
+                                  '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                                    WebkitAppearance: 'none',
+                                    margin: 0,
+                                  },
+                                },
+                              }}
+                            />
+
+                          </Grid>
+                          {prod && (
+                            <Grid item xs={12} >
+                              <Box sx={{ p: 1, mt: 0.5, bgcolor: darkMode ? '#1a3a52' : '#e3f2fd', borderRadius: 1, borderLeft: `3px solid ${stockColor}` }}>
+                                <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <Inventory2Icon sx={{ fontSize: 14 }} /> Stock: {totalPcs} pcs (Cart: {ppc > 0 ? Math.floor(totalPcs / ppc) : 0}, Lose: {ppc > 0 ? (totalPcs % ppc) : totalPcs})
+                                  {qty > 0 && ` → After Sale: ${remaining} pcs`}
+                                </Typography>
+                                {warrantyMonths > 0 && warrantyExpiry && (
+                                  <Typography variant="body2" sx={{ mt: 0.5, color: 'success.main', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <ShieldIcon sx={{ fontSize: 14 }} /> Warranty: {warrantyMonths >= 12 ? `${(warrantyMonths / 12).toFixed(1).replace(/\.0$/, '')} Year(s)` : `${warrantyMonths} Month(s)`} (until {warrantyExpiry.toLocaleDateString()})
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Grid>
+                          )}
+                        </Grid>
                       </CardContent>
                     </Card>
                   );
@@ -1264,8 +1264,7 @@ const SellerSaleEntry = () => {
                             </Grid>
                           </React.Fragment>
                         ))}
-                        
-                        <Grid item xs={12} sm={6}>
+                        <Grid item xs={6}>
                           <TextField
                             label="Total Received"
                             value={`Rs. ${(paymentParts.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toLocaleString()}`}
@@ -1273,6 +1272,8 @@ const SellerSaleEntry = () => {
                             fullWidth
                             size="small"
                           />
+                        </Grid>
+                        <Grid item xs={6}>
                           <TextField
                             label="Remaining Payment"
                             value={`Rs. ${(Math.max(0, netAmount - paymentParts.reduce((s, p) => s + (Number(p.amount) || 0), 0))).toLocaleString()}`}
