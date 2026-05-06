@@ -83,11 +83,13 @@ export function generateInvoiceHTML(invoice, products = []) {
           html {
             background: #e8e8e8;
             overflow-x: hidden;
+            overflow-y: hidden;
           }
 
           body {
             width: 100vw;
             overflow-x: hidden;
+            overflow-y: hidden;
             background: #e8e8e8;
             display: flex;
             justify-content: center;
@@ -104,6 +106,7 @@ export function generateInvoiceHTML(invoice, products = []) {
             width: 272px;
             padding: 8px 6px 12px;
             box-shadow: 0 1px 8px rgba(0,0,0,0.15);
+            overflow: hidden;
           }
 
           /* ── Header ────────────────────────────────────────────── */
@@ -193,7 +196,7 @@ export function generateInvoiceHTML(invoice, products = []) {
 
             html {
               background: white;
-              overflow-y: hidden;        /* ← fixed: was missing, needed to undo overflow-x:hidden */
+              overflow: visible;        /* ← fixed: was missing, needed to undo overflow-x:hidden */
             }
 
             body {
