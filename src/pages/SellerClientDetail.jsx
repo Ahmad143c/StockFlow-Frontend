@@ -380,6 +380,18 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
     setRefundInvoices(filtered.filter(i => i.refunds && i.refunds.length > 0));
   }, [selectedCustomer, invoiceQuery, paymentStatusFilter, fetchInvoices]);
 
+  // Update invoices when selectedCustomer changes
+  useEffect(() => {
+    if (selectedCustomer) {
+      const fetchAndFilter = async () => {
+        const name = selectedCustomer.name || null;
+        const contact = selectedCustomer.contact || null;
+        await fetchInvoices(name, contact, invoiceQuery || null, paymentStatusFilter || null);
+      };
+      fetchAndFilter();
+    }
+  }, [selectedCustomer, invoiceQuery, paymentStatusFilter, fetchInvoices]);
+
   // Apply only date filters (when no invoice search is provided)
   const handleApplyDateFilter = useCallback(async () => {
     if (!selectedCustomer) {
