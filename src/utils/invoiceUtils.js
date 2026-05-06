@@ -59,7 +59,7 @@ export function generateInvoiceHTML(invoice, products = []) {
   // helper to compute warranty string for an item
   const warrantyForItem = (i) => {
     let warrantyString = 'No warranty';
-    const prod = Array.isArray(products) 
+    const prod = Array.isArray(products)
       ? products.find(p => p._id === (i.productId || i._id))
       : products[i.productId || i._id];
     const months = prod ? Number(prod.warrantyMonths || 0) : 0;
@@ -82,166 +82,166 @@ export function generateInvoiceHTML(invoice, products = []) {
         <head>
           <title>Invoice #${(invoice._id || '').toString().slice(-6)}</title>
           <style>
-            /* Base styles for all media */
+            /* ── Reset ───────────────────────────────────────────── */
             * {
               margin: 0;
               padding: 0;
               box-sizing: border-box;
             }
-            
-            html {
-              display: flex;
-              justify-content: center;
+
+            /* ── Screen preview ──────────────────────────────────── */
+            html, body {
               background: #f0f0f0;
             }
-            
+
             body {
               font-family: 'Courier New', monospace;
-              margin: 0;
-              padding: 8px;
+              /* 
+                72mm usable out of 80mm roll
+                (80mm - 4mm left margin - 4mm right margin)
+              */
+              width: 72mm;
+              margin: 0 auto;
+              padding: 4mm 0;
               color: #333;
               background: white;
             }
-            
+
+            /* ── Header ──────────────────────────────────────────── */
             .header {
               text-align: center;
-              margin-bottom: 12px;
-              border-bottom: 2px solid #000;
-              padding-bottom: 8px;
+              margin-bottom: 3mm;
+              border-bottom: 1px dashed #000;
+              padding-bottom: 3mm;
             }
-            
+
             .header h1 {
-              margin: 0 0 4px 0;
-              font-size: 14px;
+              font-size: 11pt;
               font-weight: bold;
+              margin-bottom: 1mm;
             }
-            
+
             .header p {
-              margin: 2px 0;
-              font-size: 9px;
+              font-size: 7pt;
+              margin: 0.5mm 0;
             }
-            
+
+            /* ── Invoice meta ────────────────────────────────────── */
             .invoice-info {
-              margin: 8px 0;
-              font-size: 9px;
+              margin: 2mm 0;
+              font-size: 7.5pt;
             }
-            
+
             .invoice-info div {
-              margin: 2px 0;
+              margin: 0.8mm 0;
             }
-            
+
             .invoice-info strong {
               font-weight: bold;
             }
-            
+
+            /* ── Items table ─────────────────────────────────────── */
             table {
               width: 100%;
               border-collapse: collapse;
-              margin: 8px 0;
-              font-size: 9px;
+              margin: 2mm 0;
             }
-            
+
             th {
-              background: #f5f5f5;
               border-top: 1px solid #000;
               border-bottom: 1px solid #000;
-              padding: 4px 2px;
+              padding: 1.5mm 1mm;
               text-align: left;
               font-weight: bold;
-              font-size: 8px;
+              font-size: 7pt;
             }
-            
+
             td {
-              padding: 4px 2px;
-              border-bottom: 1px solid #eee;
-              font-size: 8px;
+              padding: 1.5mm 1mm;
+              border-bottom: 1px dotted #ccc;
+              font-size: 7pt;
+              word-break: break-word;
             }
-            
+
             tr:last-child td {
               border-bottom: 1px solid #000;
             }
-            
+
             .text-right {
               text-align: right !important;
             }
-            
+
             .total-row {
-              border-top: 2px solid #000;
-              border-bottom: 2px solid #000;
+              border-top: 1px solid #000;
+              border-bottom: 1px solid #000;
               font-weight: bold;
-              background: #f9f9f9;
             }
-            
+
             .total-amount {
               font-weight: bold;
-              font-size: 10px;
+              font-size: 8pt;
             }
-            
+
+            /* ── Payment summary ─────────────────────────────────── */
             .payment-info {
-              margin-top: 8px;
+              margin-top: 2mm;
+              border-top: 1px dashed #000;
+              padding-top: 2mm;
             }
-            
+
             .payment-info div {
-              margin: 2px 0;
-              font-size: 9px;
+              margin: 1mm 0;
+              font-size: 7.5pt;
               display: flex;
               justify-content: space-between;
             }
-            
+
+            /* ── Footer ──────────────────────────────────────────── */
             .footer {
               text-align: center;
-              margin-top: 12px;
-              font-size: 10px;
+              margin-top: 4mm;
+              padding-top: 2mm;
+              border-top: 1px dashed #000;
+              font-size: 8pt;
               font-weight: bold;
             }
-            
-            /* PRINT STYLES - 80mm Thermal Printer */
+
+            /* ── PRINT — BlackCopper BC-88AC 80mm Thermal ────────── */
             @media print {
               @page {
-                size: 80mm 200mm;
-                margin: 2mm;
+                /*
+                  80mm wide roll; auto height so the page grows with content
+                  and never creates a second blank page.
+                  Margins: 2mm top/bottom, 4mm left/right (inside the printable
+                  area the driver already clips the outer ~4mm per side).
+                */
+                size: 80mm auto;
+                margin: 2mm 4mm;
               }
-              
-              html {
+
+              html, body {
                 background: white;
-                display: block;
               }
-              
+
               body {
-                width: 80mm;
+                /*
+                  Use 100% so it fills the @page printable width exactly.
+                  Do NOT set a fixed mm width here — let the @page margin
+                  control the gutter so content never gets clipped.
+                */
+                width: 100%;
                 margin: 0;
-                padding: 3px 2px;
-                font-size: 10px;
-                background: white;
+                padding: 0;
+                font-size: 8pt;
               }
-              
-              .header h1 {
-                font-size: 12px;
+
+              /* Prevent orphaned rows / cut-off content */
+              tr {
+                page-break-inside: avoid;
               }
-              
-              .header p {
-                font-size: 8px;
-              }
-              
-              .invoice-info {
-                font-size: 8px;
-              }
-              
-              table {
-                font-size: 8px;
-              }
-              
-              th, td {
-                padding: 3px 1px;
-                font-size: 7px;
-              }
-              
-              .payment-info div {
-                font-size: 8px;
-              }
-              
+
               .footer {
-                font-size: 8px;
+                page-break-after: avoid;
               }
             }
           </style>
@@ -257,7 +257,7 @@ export function generateInvoiceHTML(invoice, products = []) {
 
           <div class="invoice-info">
             <div><strong>Invoice #</strong>${(invoice._id || '').toString().slice(-6)}</div>
-            <div><strong>Date:</strong> ${new Date(invoice.createdAt || invoice.date).toLocaleDateString()} <strong>Time:</strong> ${new Date(invoice.createdAt || invoice.date).toLocaleTimeString()}</div>
+            <div><strong>Date:</strong> ${new Date(invoice.createdAt || invoice.date).toLocaleDateString()} &nbsp;<strong>Time:</strong> ${new Date(invoice.createdAt || invoice.date).toLocaleTimeString()}</div>
             <div><strong>Customer:</strong> ${invoice.customerName || '-'} | <strong>Contact:</strong> ${invoice.customerContact || '-'}</div>
             <div><strong>Payment:</strong> ${invoice.paymentMethod || '-'} | <strong>Status:</strong> ${invoice.paymentStatus || '-'}${invoice.paymentStatus === 'Credit' && invoice.dueDate ? ` | <strong>Due:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}` : ''}</div>
           </div>
@@ -265,14 +265,14 @@ export function generateInvoiceHTML(invoice, products = []) {
           <table>
             <thead>
               <tr>
-                <th>S/N</th>
+                <th>#</th>
                 <th>Item</th>
                 <th class="text-right">Qty</th>
                 <th class="text-right">Rate</th>
                 ${hasRefunds ? '<th class="text-right">Refund</th>' : ''}
                 <th class="text-right">Warranty</th>
                 ${itemsHaveDiscount ? '<th class="text-right">Disc.</th>' : ''}
-                <th class="text-right">SubTotal</th>
+                <th class="text-right">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -290,14 +290,14 @@ export function generateInvoiceHTML(invoice, products = []) {
                   <td>${splitProductName(i.productName)}</td>
                   <td class="text-right">${origQty}${refundedQty ? ` (-${refundedQty})` : ''}</td>
                   <td class="text-right">${Number(i.perPiecePrice || 0).toLocaleString()}</td>
-                  ${hasRefunds ? `<td class="text-right">${refundAmt ? 'Rs. ' + refundAmt.toLocaleString() : ''}</td>` : ''}
+                  ${hasRefunds ? `<td class="text-right">${refundAmt ? 'Rs.' + refundAmt.toLocaleString() : '-'}</td>` : ''}
                   <td class="text-right">${warrantyString}</td>
                   ${itemsHaveDiscount ? `<td class="text-right">${i.discount || 0}</td>` : ''}
                   <td class="text-right">${Number(itemSubtotal).toLocaleString()}</td>
                 </tr>
               `;
               }).join('')}
-              
+
               <tr class="total-row">
                 <td colspan="${5 + (hasRefunds ? 1 : 0) + (itemsHaveDiscount ? 1 : 0)}">Total</td>
                 <td class="text-right total-amount">Rs.${Number(totalWithoutDiscount).toLocaleString()}</td>
@@ -320,28 +320,28 @@ export function generateInvoiceHTML(invoice, products = []) {
                 const parts = Array.isArray(invoice.paymentParts) && invoice.paymentParts.length > 0
                   ? invoice.paymentParts
                   : [{ amount: paidVal, date: new Date(invoice.createdAt || invoice.date).toISOString().split('T')[0] }];
-                const partsHtml = parts.map((p, i) =>
-                  `<div><span>Payment ${i + 1} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})</span> <span>Rs. ${Number(p.amount || 0).toLocaleString()}</span></div>`
+                const partsHtml = parts.map((p, idx2) =>
+                  `<div><span>Payment ${idx2 + 1} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})</span><span>Rs. ${Number(p.amount || 0).toLocaleString()}</span></div>`
                 ).join('');
                 extra = `
                   ${partsHtml}
-                  <div><span>Remaining</span> <span>Rs. ${remaining.toLocaleString()}</span></div>`;
+                  <div><span>Remaining</span><span>Rs. ${remaining.toLocaleString()}</span></div>`;
               } else if (invoice.paymentStatus === 'Credit') {
                 extra = `
-                  <div><span>Due Date</span> <span>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}</span></div>`;
+                  <div><span>Due Date</span><span>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}</span></div>`;
               }
               return `
-                ${discountVal > 0 ? `<div><span>Discount Amount</span> <span>Rs. ${Number(discountVal).toLocaleString()}</span></div>` : ''}
-                <div><span>Total Amount</span> <span>Rs. ${Number(grossTotal).toLocaleString()}</span></div>
-                <div><span>Paid Amount</span> <span>Rs. ${Number(paidVal).toLocaleString()}</span></div>
-                ${totalRefundAmount > 0 ? `<div><span>Refunded</span> <span>Rs. ${totalRefundAmount.toLocaleString()}</span></div>` : ''}
-                <div><span>Change</span> <span>Rs. ${Number(changeVal).toLocaleString()}</span></div>
+                ${discountVal > 0 ? `<div><span>Discount</span><span>Rs. ${Number(discountVal).toLocaleString()}</span></div>` : ''}
+                <div><span>Total Amount</span><span>Rs. ${Number(grossTotal).toLocaleString()}</span></div>
+                <div><span>Paid Amount</span><span>Rs. ${Number(paidVal).toLocaleString()}</span></div>
+                ${totalRefundAmount > 0 ? `<div><span>Refunded</span><span>Rs. ${totalRefundAmount.toLocaleString()}</span></div>` : ''}
+                <div><span>Change</span><span>Rs. ${Number(changeVal).toLocaleString()}</span></div>
                 ${extra}
               `;
             })()}
           </div>
 
-          <div class="footer">Thank you for your business!</div>
+          <div class="footer">*** Thank you for your business! ***</div>
         </body>
       </html>
     `;
