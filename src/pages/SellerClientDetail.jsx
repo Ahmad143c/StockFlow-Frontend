@@ -241,13 +241,14 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
           return;
         }
 
-        // Always fetch all invoices for this seller and apply filters client-side.
-        // Server-side `customerName` or contact filters are unreliable when data is inconsistent, so we omit them.
+        // Fetch invoices for this seller, optionally filtered by customer
         const s = startDate ? `&start=${startDate}` : '';
         const e = endDate ? `&end=${endDate}` : '';
         const iq = invQuery ? `&invoice=${encodeURIComponent(invQuery)}` : '';
+        const cn = custName ? `&customerName=${encodeURIComponent(custName)}` : '';
+        const cc = custContact ? `&customerContact=${encodeURIComponent(custContact)}` : '';
         const res = await API.get(
-          `/sales?sellerId=${sellerId}${s}${e}${iq}`,
+          `/sales?sellerId=${sellerId}${cn}${cc}${s}${e}${iq}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const allInvoices = Array.isArray(res.data) ? res.data : [];
