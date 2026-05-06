@@ -2170,7 +2170,50 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                                 <TableCell sx={cellSx}>{priceList || '-'}</TableCell>
                                 <TableCell align="right" sx={cellSx}>{inv.totalQuantity || (inv.items || []).reduce((s, i) => s + (Number(i.quantity) || 0), 0)}</TableCell>
                                 <TableCell sx={cellSx}>{inv.paymentMethod || '-'}</TableCell>
-                                <TableCell sx={cellSx}>{inv.paymentStatus || '-'}</TableCell>
+                                <TableCell sx={cellSx}>
+                                  <Tooltip
+                                    open={tooltipOpen && tooltipAnchorEl === `status-${inv._id}`}
+                                    title={(() => {
+                                      if (inv.paymentStatus === 'Partial Paid') {
+                                        const parts = Array.isArray(inv.paymentParts) && inv.paymentParts.length > 0
+                                          ? inv.paymentParts
+                                          : [{ amount: inv.paidAmount || 0, date: inv.createdAt }];
+                                        const partsText = parts.map((p, i) => 
+                                          `Payment ${i + 1}: Rs. ${Number(p.amount || 0).toLocaleString()} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})`
+                                        ).join('\n');
+                                        const remaining = Math.max(0, (inv.netAmount || 0) - (inv.paidAmount || 0));
+                                        return `${partsText}\n\nRemaining: Rs. ${remaining.toLocaleString()}`;
+                                      } else if (inv.paymentStatus === 'Credit') {
+                                        return `Due Date: ${inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'Not set'}`;
+                                      } else if (inv.paymentStatus === 'Unpaid') {
+                                        return `Remaining: Rs. ${inv.netAmount ? Number(inv.netAmount).toLocaleString() : '0'}`;
+                                      }
+                                      return '';
+                                    })()}
+                                    arrow
+                                    onClose={() => setTooltipOpen(false)}
+                                  >
+                                    <Box sx={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }} onClick={() => {
+                                      setTooltipAnchorEl(`status-${inv._id}`);
+                                      setTooltipOpen(true);
+                                      setTimeout(() => setTooltipOpen(false), 10000);
+                                    }}>
+                                      <Chip
+                                        label={inv.paymentStatus || '-'}
+                                        size="small"
+                                        color={(() => {
+                                          switch (inv.paymentStatus) {
+                                            case 'Paid': return 'success';
+                                            case 'Partial Paid': return 'warning';
+                                            case 'Credit': return 'info';
+                                            case 'Unpaid': return 'error';
+                                            default: return 'default';
+                                          }
+                                        })()}
+                                      />
+                                    </Box>
+                                  </Tooltip>
+                                </TableCell>
                                 <TableCell align="center">
                                   {underWarranty ? (
                                     <Tooltip title={warrantyTooltip} arrow>

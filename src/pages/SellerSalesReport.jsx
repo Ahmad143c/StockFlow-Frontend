@@ -814,7 +814,50 @@ const SellerSalesReport = () => {
                           Rs. {(Number(sale.discountAmount) || 0).toLocaleString()}
                         </Typography>
                       </TableCell>
-                      <TableCell sx={cellSx}>{sale.paymentStatus}</TableCell>
+                      <TableCell sx={cellSx}>
+                        <Tooltip
+                          open={tooltipOpen && tooltipAnchorEl === `status-${sale._id}`}
+                          title={(() => {
+                            if (sale.paymentStatus === 'Partial Paid') {
+                              const parts = Array.isArray(sale.paymentParts) && sale.paymentParts.length > 0
+                                ? sale.paymentParts
+                                : [{ amount: sale.paidAmount || 0, date: sale.createdAt }];
+                              const partsText = parts.map((p, i) => 
+                                `Payment ${i + 1}: Rs. ${Number(p.amount || 0).toLocaleString()} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})`
+                              ).join('\n');
+                              const remaining = Math.max(0, (sale.netAmount || 0) - (sale.paidAmount || 0));
+                              return `${partsText}\n\nRemaining: Rs. ${remaining.toLocaleString()}`;
+                            } else if (sale.paymentStatus === 'Credit') {
+                              return `Due Date: ${sale.dueDate ? new Date(sale.dueDate).toLocaleDateString() : 'Not set'}`;
+                            } else if (sale.paymentStatus === 'Unpaid') {
+                              return `Remaining: Rs. ${sale.netAmount ? Number(sale.netAmount).toLocaleString() : '0'}`;
+                            }
+                            return '';
+                          })()}
+                          arrow
+                          onClose={() => setTooltipOpen(false)}
+                        >
+                          <Box sx={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }} onClick={() => {
+                            setTooltipAnchorEl(`status-${sale._id}`);
+                            setTooltipOpen(true);
+                            setTimeout(() => setTooltipOpen(false), 10000);
+                          }}>
+                            <Chip
+                              label={sale.paymentStatus}
+                              size="small"
+                              color={(() => {
+                                switch (sale.paymentStatus) {
+                                  case 'Paid': return 'success';
+                                  case 'Partial Paid': return 'warning';
+                                  case 'Credit': return 'info';
+                                  case 'Unpaid': return 'error';
+                                  default: return 'default';
+                                }
+                              })()}
+                            />
+                          </Box>
+                        </Tooltip>
+                      </TableCell>
                       <TableCell sx={cellSx}>
                         {underWarranty ? (
                           <Tooltip

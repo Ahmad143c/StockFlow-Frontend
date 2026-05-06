@@ -1242,7 +1242,7 @@ const SellerSaleEntry = () => {
                                 InputLabelProps={{ shrink: true }}
                               />
                             </Grid>
-                            <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Grid item xs={12} sm={12} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               {paymentParts.length > 1 && (
                                 <Tooltip title="Remove Payment">
                                   <IconButton
