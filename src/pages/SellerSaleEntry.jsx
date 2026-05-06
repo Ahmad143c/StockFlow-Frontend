@@ -1194,7 +1194,7 @@ const SellerSaleEntry = () => {
                       <>
                         {paymentParts.map((part, idx) => (
                           <React.Fragment key={idx}>
-                            <Grid item xs={12} sm={4}>
+                            <Grid item xs={12} sm={6}>
                               <TextField
                                 label={`Payment ${idx + 1} Amount`}
                                 type="number"
@@ -1223,7 +1223,7 @@ const SellerSaleEntry = () => {
                                 }}
                               />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid item xs={12} sm={6}>
                               <TextField
                                 label={`Payment ${idx + 1} Date`}
                                 type="date"
