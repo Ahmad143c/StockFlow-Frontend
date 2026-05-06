@@ -91,12 +91,12 @@ export function generateInvoiceHTML(invoice, products = []) {
               Courier New is the best monospace for thermal — equal-width
               chars align columns perfectly without needing a table hack.
             */
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Time New Roman', times, Serif;
             font-size: 18px;
             line-height: 1.45;
             color: #000;
             background: #fff;
-            width: 72mm;        /* 80mm roll − 4mm margin each side */
+            width: 58mm;        /* 80mm roll − 4mm margin each side */
             margin: 0 auto;
             padding: 3mm 1mm;
           }
