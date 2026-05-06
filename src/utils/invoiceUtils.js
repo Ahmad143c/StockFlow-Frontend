@@ -79,27 +79,42 @@ export function generateInvoiceHTML(invoice, products = []) {
           * { margin: 0; padding: 0; box-sizing: border-box; }
 
           /* ── Screen preview ────────────────────────────────────── */
-          html { background: #e0e0e0; }
+          html {
+            background: #e0e0e0;
+            /* 
+              IMPORTANT: do NOT set height/min-height on html or body.
+              Let content define the height naturally so the print
+              page has no trailing blank space.
+            */
+          }
 
           body {
             /*
-              WHY px AND WHY 18px:
-              The BC-88AC prints at 203 DPI. Chrome maps 1px = 1/96 inch,
-              so 18px ≈ 0.19in ≈ ~38 dots on the head — large enough for
-              crisp, fully-formed characters. Anything below ~14px starts
-              looking blurry because the printer interpolates thin strokes.
-              Courier New is the best monospace for thermal — equal-width
-              chars align columns perfectly without needing a table hack.
+              Times New Roman prints sharper than Courier on thermal
+              because its strokes are thinner and more defined.
+              The printer's 203 DPI renders serif letterforms cleanly.
             */
-            font-family: 'Time New Roman', times, Serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 18px;
             line-height: 1.45;
             color: #000;
             background: #fff;
-            width: 58mm;        /* 80mm roll − 4mm margin each side */
+            width: 72mm;        /* 80mm roll − 4mm margin each side */
             margin: 0 auto;
             padding: 3mm 1mm;
+
+            /*
+              display:inline-block makes the body shrink-wrap to its
+              content height on screen, so no grey empty area shows
+              below the receipt in the browser preview.
+            */
+            display: inline-block;
+            min-width: 72mm;
           }
+
+          /* Override inline-block centering for html wrapper */
+          html { text-align: center; }
+          body { text-align: left; }
 
           /* ── Header ────────────────────────────────────────────── */
           .header {
@@ -109,7 +124,7 @@ export function generateInvoiceHTML(invoice, products = []) {
             border-bottom: 2px dashed #000;
           }
           .header h1 {
-            font-size: 21px;
+            font-size: 20px;
             font-weight: bold;
             letter-spacing: 0.3px;
             margin-bottom: 2px;
@@ -145,7 +160,7 @@ export function generateInvoiceHTML(invoice, products = []) {
           .text-right { text-align: right !important; }
 
           .total-row td {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
             border-top: 2px solid #000;
             border-bottom: 2px solid #000;
@@ -165,7 +180,7 @@ export function generateInvoiceHTML(invoice, products = []) {
             margin: 1.5mm 0;
           }
           .payment-info .row.bold {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
           }
 
@@ -173,40 +188,50 @@ export function generateInvoiceHTML(invoice, products = []) {
           .footer {
             text-align: center;
             margin-top: 3mm;
-            padding-top: 2mm;
+            padding: 2mm 0 4mm 0;   /* extra bottom padding = paper gap after cut */
             border-top: 2px dashed #000;
-            font-size: 17px;
+            font-size: 16px;
             font-weight: bold;
           }
 
           /* ── PRINT — BlackCopper BC-88AC 80mm Thermal ──────────── */
           @media print {
             @page {
-              size: 80mm auto;   /* auto height = no blank second page */
+              /*
+                size: 80mm auto  ← THE KEY FIX for blank space.
+                "auto" height means the page is exactly as tall as
+                the content — no fixed 200mm/297mm that leaves blank
+                white space after the footer.
+              */
+              size: 80mm auto;
               margin: 2mm 3mm;
             }
 
-            html { background: white; }
-
-            body {
-              width: 100%;       /* fill @page printable area */
-              margin: 0;
-              padding: 0;
-              font-size: 18px;  /* keep large — never go below 14px on BC-88AC */
+            html {
+              background: white;
+              text-align: left;   /* reset centering trick for print */
             }
 
-            /* Explicit sizes inside @media print so browser doesn't scale down */
-            .header h1         { font-size: 21px; }
+            body {
+              display: block;     /* reset inline-block for print */
+              width: 100%;        /* fill @page printable area */
+              margin: 0;
+              padding: 0;
+              font-family: 'Times New Roman', Times, serif;
+              font-size: 18px;
+            }
+
+            .header h1         { font-size: 20px; }
             .header p          { font-size: 16px; }
             .invoice-info div  { font-size: 16px; }
             th, td             { font-size: 16px; }
-            .total-row td      { font-size: 18px; }
+            .total-row td      { font-size: 17px; }
             .payment-info .row        { font-size: 16px; }
-            .payment-info .row.bold   { font-size: 18px; }
-            .footer            { font-size: 17px; }
+            .payment-info .row.bold   { font-size: 17px; }
+            .footer            { font-size: 16px; }
 
-            tr { page-break-inside: avoid; }
-            .footer { page-break-after: avoid; }
+            tr                 { page-break-inside: avoid; }
+            .footer            { page-break-after: avoid; }
           }
         </style>
       </head>
