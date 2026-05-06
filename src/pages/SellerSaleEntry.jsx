@@ -68,6 +68,7 @@ const SellerSaleEntry = () => {
   const [warrantyItems, setWarrantyItems] = useState([]);
   const [warrantyReason, setWarrantyReason] = useState('');
   const [receivedAmount, setReceivedAmount] = useState(0);
+  const [paymentParts, setPaymentParts] = useState([{ amount: '', date: new Date().toISOString().split('T')[0] }]);
   const [dueDate, setDueDate] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [paymentStatus, setPaymentStatus] = useState('Unpaid');
@@ -302,6 +303,14 @@ const SellerSaleEntry = () => {
   const netAmount = Math.max(0, totalAmount - discountTotal - Number(discountAmount || 0));
   const totalQuantity = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
 
+  // Compute receivedAmount from paymentParts
+  useEffect(() => {
+    if (paymentStatus === 'Partial Paid') {
+      const total = paymentParts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      setReceivedAmount(total);
+    }
+  }, [paymentParts, paymentStatus]);
+
   useEffect(() => {
     const effectivePaid = paymentStatus === 'Partial Paid' ? (Number(receivedAmount) || 0) : (Number(paidAmount) || 0);
     setChangeAmount(Math.max(0, effectivePaid - netAmount));
@@ -395,7 +404,8 @@ const SellerSaleEntry = () => {
         paymentStatus,
         paymentProofUrl: proofUrl,
         cashAmount: paymentMethod === 'Cash' ? effectivePaid : 0,
-        changeAmount: Number(changeAmount) || 0
+        changeAmount: Number(changeAmount) || 0,
+        paymentParts: paymentStatus === 'Partial Paid' ? paymentParts.filter(p => Number(p.amount) > 0).map(p => ({ amount: Number(p.amount), date: p.date })) : []
       }, { headers: { Authorization: `Bearer ${token}` } });
       const saved = res.data;
       setSuccess('Sale recorded!');
@@ -405,7 +415,7 @@ const SellerSaleEntry = () => {
       setItems([{ productId: '', productName: '', SKU: '', brand: '', quantity: 0, perPiecePrice: 0, discount: 0, subtotal: 0 }]);
       setCustomerName(''); setCustomerContact(''); setCustomerEmail(''); setCashierName('');
       setPaymentMethod('Cash'); setPaymentStatus('Unpaid'); setPaidAmount(0); setChangeAmount(0); setPaymentProofFile(null); setPaymentProofUrl('');
-      setReceivedAmount(0); setDueDate(''); setDiscountAmount(0);
+      setReceivedAmount(0); setDueDate(''); setDiscountAmount(0); setPaymentParts([{ amount: '', date: new Date().toISOString().split('T')[0] }]);
 
       // Run background operations without awaiting them
       // 1. Refresh products
@@ -1164,7 +1174,12 @@ const SellerSaleEntry = () => {
                         <InputLabel>Payment Status</InputLabel>
                         <Select
                           value={paymentStatus}
-                          onChange={e => setPaymentStatus(e.target.value)}
+                          onChange={e => {
+                            setPaymentStatus(e.target.value);
+                            if (e.target.value === 'Partial Paid') {
+                              setPaymentParts([{ amount: '', date: new Date().toISOString().split('T')[0] }]);
+                            }
+                          }}
                           label="Payment Status"
                         >
                           <MenuItem value="Paid">Paid</MenuItem>
@@ -1177,35 +1192,91 @@ const SellerSaleEntry = () => {
 
                     {paymentStatus === 'Partial Paid' ? (
                       <>
+                        {paymentParts.map((part, idx) => (
+                          <React.Fragment key={idx}>
+                            <Grid item xs={12} sm={4}>
+                              <TextField
+                                label={`Payment ${idx + 1} Amount`}
+                                type="number"
+                                value={part.amount || ''}
+                                onChange={(e) => {
+                                  const copy = [...paymentParts];
+                                  copy[idx] = { ...copy[idx], amount: e.target.value };
+                                  setPaymentParts(copy);
+                                }}
+                                fullWidth
+                                size="small"
+                                InputProps={{
+                                  inputProps: {
+                                    onWheel: (e) => e.target.blur(),
+                                    min: 0,
+                                  },
+                                }}
+                                sx={{
+                                  '& input[type=number]': {
+                                    MozAppearance: 'textfield',
+                                    '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                                      WebkitAppearance: 'none',
+                                      margin: 0,
+                                    },
+                                  },
+                                }}
+                              />
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                              <TextField
+                                label={`Payment ${idx + 1} Date`}
+                                type="date"
+                                value={part.date}
+                                onChange={(e) => {
+                                  const copy = [...paymentParts];
+                                  copy[idx] = { ...copy[idx], date: e.target.value };
+                                  setPaymentParts(copy);
+                                }}
+                                fullWidth
+                                size="small"
+                                InputLabelProps={{ shrink: true }}
+                              />
+                            </Grid>
+                            <Grid item xs={12} sm={4} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {paymentParts.length > 1 && (
+                                <Tooltip title="Remove Payment">
+                                  <IconButton
+                                    color="error"
+                                    size="small"
+                                    onClick={() => setPaymentParts(paymentParts.filter((_, i) => i !== idx))}
+                                  >
+                                    <RemoveIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              {idx === paymentParts.length - 1 && (
+                                <Tooltip title="Add Another Payment">
+                                  <IconButton
+                                    color="primary"
+                                    size="small"
+                                    onClick={() => setPaymentParts([...paymentParts, { amount: '', date: new Date().toISOString().split('T')[0] }])}
+                                  >
+                                    <AddIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Grid>
+                          </React.Fragment>
+                        ))}
                         <Grid item xs={12} sm={6}>
                           <TextField
-                            label="Received Payment"
-                            type="number"
-                            value={receivedAmount || ''}
-                            onChange={(e) => setReceivedAmount(e.target.value)}
+                            label="Total Received"
+                            value={`Rs. ${(paymentParts.reduce((s, p) => s + (Number(p.amount) || 0), 0)).toLocaleString()}`}
+                            InputProps={{ readOnly: true }}
                             fullWidth
                             size="small"
-                            InputProps={{
-                              inputProps: {
-                                onWheel: (e) => e.target.blur(),
-                                min: 0,
-                              },
-                            }}
-                            sx={{
-                              '& input[type=number]': {
-                                MozAppearance: 'textfield',
-                                '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                                  WebkitAppearance: 'none',
-                                  margin: 0,
-                                },
-                              },
-                            }}
                           />
                         </Grid>
                         <Grid item xs={12} sm={6}>
                           <TextField
                             label="Remaining Payment"
-                            value={(Math.max(0, netAmount - (Number(receivedAmount) || 0))).toLocaleString()}
+                            value={`Rs. ${(Math.max(0, netAmount - paymentParts.reduce((s, p) => s + (Number(p.amount) || 0), 0))).toLocaleString()}`}
                             InputProps={{ readOnly: true }}
                             fullWidth
                             size="small"

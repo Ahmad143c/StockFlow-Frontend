@@ -317,7 +317,14 @@ export function generateInvoiceHTML(invoice, products = []) {
               let extra = '';
               if (invoice.paymentStatus === 'Partial Paid') {
                 const remaining = Math.max(0, netAmount - (invoice.paidAmount || 0));
+                const parts = Array.isArray(invoice.paymentParts) && invoice.paymentParts.length > 0
+                  ? invoice.paymentParts
+                  : [{ amount: paidVal, date: new Date(invoice.createdAt || invoice.date).toISOString().split('T')[0] }];
+                const partsHtml = parts.map((p, i) =>
+                  `<div><span>Payment ${i + 1} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})</span> <span>Rs. ${Number(p.amount || 0).toLocaleString()}</span></div>`
+                ).join('');
                 extra = `
+                  ${partsHtml}
                   <div><span>Remaining</span> <span>Rs. ${remaining.toLocaleString()}</span></div>`;
               } else if (invoice.paymentStatus === 'Credit') {
                 extra = `
