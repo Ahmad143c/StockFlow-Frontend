@@ -57,6 +57,7 @@ const SellerSaleEntry = () => {
     customerEmail: '',
     dueDate: '',
     discountAmount: 0,
+    paymentParts: [],
     items: []
   });
   const [editPaymentProofFile, setEditPaymentProofFile] = useState(null);
@@ -517,6 +518,9 @@ const SellerSaleEntry = () => {
       paymentStatus: sale.paymentStatus || 'Unpaid',
       paidAmount: sale.paidAmount ?? 0,
       discountAmount: sale.discountAmount ?? 0,
+      paymentParts: Array.isArray(sale.paymentParts) && sale.paymentParts.length > 0
+        ? sale.paymentParts.map(p => ({ amount: p.amount || '', date: p.date ? new Date(p.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0] }))
+        : sale.paymentStatus === 'Partial Paid' ? [{ amount: sale.paidAmount ?? '', date: sale.createdAt ? new Date(sale.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0] }] : [],
       items: mappedItems
     });
     setEditPaymentProofFile(null);
@@ -650,7 +654,7 @@ const SellerSaleEntry = () => {
         edited: true
       }, { headers: { Authorization: `Bearer ${token}` } });
       setEditSale(null);
-      setEditForm({ cashierName: '', customerName: '', customerContact: '', paymentMethod: 'Cash', paymentStatus: 'Unpaid', paidAmount: 0, discountAmount: 0, items: [] });
+      setEditForm({ cashierName: '', customerName: '', customerContact: '', paymentMethod: 'Cash', paymentStatus: 'Unpaid', paidAmount: 0, discountAmount: 0, paymentParts: [], items: [] });
       setEditPaymentProofFile(null);
       // notify other windows and the admin header about the update
       try {
@@ -1238,7 +1242,7 @@ const SellerSaleEntry = () => {
                                 InputLabelProps={{ shrink: true }}
                               />
                             </Grid>
-                            <Grid item xs={12} sm={4} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               {paymentParts.length > 1 && (
                                 <Tooltip title="Remove Payment">
                                   <IconButton
@@ -1765,7 +1769,16 @@ const SellerSaleEntry = () => {
                           <InputLabel>Payment Status</InputLabel>
                           <Select
                             value={editForm.paymentStatus || 'Unpaid'}
-                            onChange={e => setEditForm({ ...editForm, paymentStatus: e.target.value })}
+                            onChange={e => {
+                              const newStatus = e.target.value;
+                              setEditForm(prev => ({
+                                ...prev,
+                                paymentStatus: newStatus,
+                                paymentParts: newStatus === 'Partial Paid' && prev.paymentParts.length === 0
+                                  ? [{ amount: '', date: new Date().toISOString().split('T')[0] }]
+                                  : prev.paymentParts
+                              }));
+                            }}
                             label="Payment Status"
                           >
                             <MenuItem value="Paid">Paid</MenuItem>
@@ -1777,30 +1790,90 @@ const SellerSaleEntry = () => {
                       </Grid>
                       {editForm.paymentStatus === 'Partial Paid' ? (
                         <>
+                          {(editForm.paymentParts || []).map((part, idx) => (
+                            <React.Fragment key={idx}>
+                              <Grid item xs={12} sm={4} md={3}>
+                                <TextField
+                                  fullWidth
+                                  label={`Payment ${idx + 1} Amount`}
+                                  type="number"
+                                  value={part.amount || ''}
+                                  onChange={(e) => {
+                                    const copy = [...(editForm.paymentParts || [])];
+                                    copy[idx] = { ...copy[idx], amount: e.target.value };
+                                    setEditForm(prev => ({ ...prev, paymentParts: copy, paidAmount: copy.reduce((s, p) => s + (Number(p.amount) || 0), 0) }));
+                                  }}
+                                  InputProps={{
+                                    inputProps: {
+                                      onWheel: (e) => e.target.blur(),
+                                      min: 0,
+                                    },
+                                  }}
+                                  sx={{
+                                    '& input[type=number]': {
+                                      MozAppearance: 'textfield',
+                                      '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                                        WebkitAppearance: 'none',
+                                        margin: 0,
+                                      },
+                                    },
+                                  }}
+                                />
+                              </Grid>
+                              <Grid item xs={12} sm={4} md={3}>
+                                <TextField
+                                  fullWidth
+                                  label={`Payment ${idx + 1} Date`}
+                                  type="date"
+                                  value={part.date || ''}
+                                  onChange={(e) => {
+                                    const copy = [...(editForm.paymentParts || [])];
+                                    copy[idx] = { ...copy[idx], date: e.target.value };
+                                    setEditForm(prev => ({ ...prev, paymentParts: copy }));
+                                  }}
+                                  InputLabelProps={{ shrink: true }}
+                                />
+                              </Grid>
+                              <Grid item xs={12} sm={4} md={3} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {(editForm.paymentParts || []).length > 1 && (
+                                  <Tooltip title="Remove Payment">
+                                    <IconButton
+                                      color="error"
+                                      size="small"
+                                      onClick={() => {
+                                        const copy = (editForm.paymentParts || []).filter((_, i) => i !== idx);
+                                        setEditForm(prev => ({ ...prev, paymentParts: copy, paidAmount: copy.reduce((s, p) => s + (Number(p.amount) || 0), 0) }));
+                                      }}
+                                    >
+                                      <RemoveIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+                                {idx === (editForm.paymentParts || []).length - 1 && (
+                                  <Tooltip title="Add Another Payment">
+                                    <IconButton
+                                      color="primary"
+                                      size="small"
+                                      onClick={() => {
+                                        setEditForm(prev => ({
+                                          ...prev,
+                                          paymentParts: [...(prev.paymentParts || []), { amount: '', date: new Date().toISOString().split('T')[0] }]
+                                        }));
+                                      }}
+                                    >
+                                      <AddIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+                              </Grid>
+                            </React.Fragment>
+                          ))}
                           <Grid item xs={12} sm={6} md={3}>
                             <TextField
                               fullWidth
-                              label="Received Payment"
-                              type="number"
-                              value={editForm.paidAmount || ''}
-                              onChange={(e) =>
-                                setEditForm({ ...editForm, paidAmount: e.target.value })
-                              }
-                              InputProps={{
-                                inputProps: {
-                                  onWheel: (e) => e.target.blur(), // 👈 prevents scroll changing value
-                                  min: 0,
-                                },
-                              }}
-                              sx={{
-                                '& input[type=number]': {
-                                  MozAppearance: 'textfield',
-                                  '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                                    WebkitAppearance: 'none',
-                                    margin: 0,
-                                  },
-                                },
-                              }}
+                              label="Total Received"
+                              value={`Rs. ${(editForm.paymentParts || []).reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString()}`}
+                              InputProps={{ readOnly: true }}
                             />
                           </Grid>
                           <Grid item xs={12} sm={6} md={3}>
@@ -1809,7 +1882,8 @@ const SellerSaleEntry = () => {
                               label="Remaining Payment"
                               value={(() => {
                                 const editNetAmount = editForm.items.reduce((sum, i) => sum + ((Number(i.perPiecePrice) * Number(i.quantity)) - (Number(i.discount) || 0)), 0) - Number(editForm.discountAmount || 0);
-                                return (Math.max(0, editNetAmount - (Number(editForm.paidAmount) || 0))).toLocaleString();
+                                const totalPaid = (editForm.paymentParts || []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+                                return `Rs. ${Math.max(0, editNetAmount - totalPaid).toLocaleString()}`;
                               })()}
                               InputProps={{ readOnly: true }}
                             />
