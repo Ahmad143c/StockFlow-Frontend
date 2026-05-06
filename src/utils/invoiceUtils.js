@@ -79,17 +79,37 @@ export function generateInvoiceHTML(invoice, products = []) {
           /* ── Reset ─────────────────────────────────────────────── */
           * { margin: 0; padding: 0; box-sizing: border-box; }
 
-          /* ── SCREEN: outer shell ───────────────────────────────── */
-          html, body {
-            width: 100%;
+          /* ── SCREEN: page shell ─────────────────────────────────── */
+          html {
             background: #e8e8e8;
+            /*
+              overflow:hidden on html stops the browser from showing
+              any content that extends beyond the viewport width.
+              This is the key fix for the right-side overflow issue.
+            */
+            overflow-x: hidden;
           }
 
+          body {
+            /*
+              width: 100vw ensures body never exceeds viewport.
+              overflow:hidden clips anything inside that goes wider.
+            */
+            width: 100vw;
+            overflow-x: hidden;
+            background: #e8e8e8;
+            display: flex;
+            justify-content: center;
+            padding: 8px 0 16px;
+          }
+
+          /* ── Receipt card ───────────────────────────────────────── */
           /*
-            .receipt is the actual white card.
-            It is always 272px (≈72mm) wide — the thermal paper width.
-            JS scales it down if the viewport is narrower.
-            transform-origin: top center keeps it centered.
+            STRATEGY: use CSS zoom (not transform: scale).
+            zoom actually shrinks layout space too, so the page
+            height collapses correctly and nothing overflows.
+            zoom is supported in all Chromium-based browsers (Chrome, Edge)
+            which is what your app runs in.
           */
           .receipt {
             font-family: 'Times New Roman', Times, serif;
@@ -97,12 +117,14 @@ export function generateInvoiceHTML(invoice, products = []) {
             line-height: 1.45;
             color: #000;
             background: #fff;
+            /*
+              Fixed at 272px (≈72mm). JS sets zoom so it shrinks
+              to fit narrower viewports while the layout adapts.
+            */
             width: 272px;
-            margin: 0 auto;
-            padding: 8px 4px 12px;
-            box-shadow: 0 1px 6px rgba(0,0,0,0.18);
-            transform-origin: top center;
-            /* scale is set by JS below */
+            padding: 8px 6px 12px;
+            box-shadow: 0 1px 8px rgba(0,0,0,0.15);
+            /* zoom is set dynamically by JS below */
           }
 
           /* ── Header ────────────────────────────────────────────── */
@@ -190,18 +212,24 @@ export function generateInvoiceHTML(invoice, products = []) {
               margin: 2mm 3mm;
             }
 
-            html, body {
+            html {
               background: white;
-              width: 100%;
+              overflow: visible;
             }
 
-            /* Unwrap the .receipt card — print fills full page width */
+            body {
+              width: 100%;
+              overflow: visible;
+              display: block;
+              padding: 0;
+              background: white;
+            }
+
             .receipt {
               width: 100% !important;
-              margin: 0 !important;
               padding: 0 !important;
               box-shadow: none !important;
-              transform: none !important;
+              zoom: 1 !important;           /* reset zoom for print */
               font-size: 18px;
             }
 
@@ -214,14 +242,13 @@ export function generateInvoiceHTML(invoice, products = []) {
             .payment-info .row.bold   { font-size: 17px; }
             .footer            { font-size: 16px; }
 
-            tr     { page-break-inside: avoid; }
+            tr      { page-break-inside: avoid; }
             .footer { page-break-after: avoid; }
           }
         </style>
       </head>
       <body>
 
-        <!-- All receipt content lives inside .receipt so JS can scale it -->
         <div class="receipt" id="receipt">
 
           <!-- HEADER -->
@@ -330,39 +357,29 @@ export function generateInvoiceHTML(invoice, products = []) {
 
         <script>
           (function () {
-            var RECEIPT_W = 272; // px — matches .receipt width above
+            var RECEIPT_W = 272; // must match .receipt width in CSS
 
-            function scaleReceipt() {
+            function applyZoom() {
               var el = document.getElementById('receipt');
               if (!el) return;
 
-              // Available width = viewport minus a small gutter (16px each side)
+              /*
+                Use CSS zoom — unlike transform:scale(), zoom actually
+                shrinks the element's layout box, so the page height
+                and body width adjust correctly. No overflow, no gap.
+
+                Available width = viewport minus 16px padding each side.
+              */
               var available = window.innerWidth - 32;
+              var zoom = available < RECEIPT_W
+                ? (available / RECEIPT_W)
+                : 1;
 
-              if (available >= RECEIPT_W) {
-                // Viewport is wide enough — no scaling needed
-                el.style.transform = 'none';
-                document.body.style.height = '';
-              } else {
-                // Scale DOWN so receipt fits without horizontal scroll/clip
-                var scale = available / RECEIPT_W;
-                el.style.transform = 'scale(' + scale + ')';
-                el.style.transformOrigin = 'top center';
-
-                /*
-                  After scaling, the element still occupies its natural
-                  272px × naturalHeight in layout space, leaving a big
-                  gap below. Correct the body height so it matches the
-                  visually-scaled height.
-                */
-                var naturalH = el.getBoundingClientRect().height / scale;
-                document.body.style.height = Math.ceil(naturalH * scale) + 'px';
-              }
+              el.style.zoom = zoom;
             }
 
-            // Run on load and on every resize
-            scaleReceipt();
-            window.addEventListener('resize', scaleReceipt);
+            applyZoom();
+            window.addEventListener('resize', applyZoom);
           })();
         </script>
 
