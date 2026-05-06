@@ -83,13 +83,11 @@ export function generateInvoiceHTML(invoice, products = []) {
           html {
             background: #e8e8e8;
             overflow-x: hidden;
-            overflow-y: hidden;
           }
 
           body {
             width: 100vw;
             overflow-x: hidden;
-            overflow-y: hidden;
             background: #e8e8e8;
             display: flex;
             justify-content: center;
@@ -103,10 +101,9 @@ export function generateInvoiceHTML(invoice, products = []) {
             line-height: 1.45;
             color: #000;
             background: #fff;
-            width: 100%;
+            width: 272px;
             padding: 8px 6px 12px;
             box-shadow: 0 1px 8px rgba(0,0,0,0.15);
-            overflow: hidden;
           }
 
           /* ── Header ────────────────────────────────────────────── */
@@ -196,7 +193,7 @@ export function generateInvoiceHTML(invoice, products = []) {
 
             html {
               background: white;
-              overflow: visible;        /* ← fixed: was missing, needed to undo overflow-x:hidden */
+              overflow-y: hidde;        /* ← fixed: was missing, needed to undo overflow-x:hidden */
             }
 
             body {
@@ -339,8 +336,20 @@ export function generateInvoiceHTML(invoice, products = []) {
 
         <script>
           (function () {
-            var el = document.getElementById('receipt');
-            if (el) el.style.zoom = 1;
+            var RECEIPT_W = 272;
+
+            function applyZoom() {
+              var el = document.getElementById('receipt');
+              if (!el) return;
+              var available = window.innerWidth - 32;
+              var zoom = available < RECEIPT_W
+                ? (available / RECEIPT_W)
+                : 1;
+              el.style.zoom = zoom;
+            }
+
+            applyZoom();
+            window.addEventListener('resize', applyZoom);
           })();
         </script>
 
