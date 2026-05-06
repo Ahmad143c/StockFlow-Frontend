@@ -96,7 +96,7 @@ export function generateInvoiceHTML(invoice, products = []) {
             }
             
             body {
-              font-family: 'Courier New', monospace;
+              font-family: 'Time New Roman', times, Serif;
               margin: 0;
               padding: 8px;
               color: #333;
