@@ -1264,6 +1264,7 @@ const SellerSaleEntry = () => {
                             </Grid>
                           </React.Fragment>
                         ))}
+                        
                         <Grid item xs={12} sm={6}>
                           <TextField
                             label="Total Received"
@@ -1272,8 +1273,6 @@ const SellerSaleEntry = () => {
                             fullWidth
                             size="small"
                           />
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
                           <TextField
                             label="Remaining Payment"
                             value={`Rs. ${(Math.max(0, netAmount - paymentParts.reduce((s, p) => s + (Number(p.amount) || 0), 0))).toLocaleString()}`}
