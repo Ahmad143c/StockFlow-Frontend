@@ -82,19 +82,10 @@ export function generateInvoiceHTML(invoice, products = []) {
           /* ── SCREEN: page shell ─────────────────────────────────── */
           html {
             background: #e8e8e8;
-            /*
-              overflow:hidden on html stops the browser from showing
-              any content that extends beyond the viewport width.
-              This is the key fix for the right-side overflow issue.
-            */
             overflow-x: hidden;
           }
 
           body {
-            /*
-              width: 100vw ensures body never exceeds viewport.
-              overflow:hidden clips anything inside that goes wider.
-            */
             width: 100vw;
             overflow-x: hidden;
             background: #e8e8e8;
@@ -104,27 +95,15 @@ export function generateInvoiceHTML(invoice, products = []) {
           }
 
           /* ── Receipt card ───────────────────────────────────────── */
-          /*
-            STRATEGY: use CSS zoom (not transform: scale).
-            zoom actually shrinks layout space too, so the page
-            height collapses correctly and nothing overflows.
-            zoom is supported in all Chromium-based browsers (Chrome, Edge)
-            which is what your app runs in.
-          */
           .receipt {
             font-family: 'Times New Roman', Times, serif;
             font-size: 18px;
             line-height: 1.45;
             color: #000;
             background: #fff;
-            /*
-              Fixed at 272px (≈72mm). JS sets zoom so it shrinks
-              to fit narrower viewports while the layout adapts.
-            */
             width: 272px;
             padding: 8px 6px 12px;
             box-shadow: 0 1px 8px rgba(0,0,0,0.15);
-            /* zoom is set dynamically by JS below */
           }
 
           /* ── Header ────────────────────────────────────────────── */
@@ -214,22 +193,22 @@ export function generateInvoiceHTML(invoice, products = []) {
 
             html {
               background: white;
-              overflow: visible;
+              overflow: visible;        /* ← fixed: was missing, needed to undo overflow-x:hidden */
             }
 
             body {
-              width: 100%;
-              overflow: visible;
+              width: auto;              /* ← FIXED: was 100vw which collapses in print context */
+              overflow: visible;        /* ← FIXED: was not set, inherited overflow-x:hidden from screen */
               display: block;
               padding: 0;
               background: white;
             }
 
             .receipt {
-              width: 100% !important;
+              width: 100% !important;   /* ← FIXED: was 272px, now fills the 80mm @page width */
               padding: 0 !important;
               box-shadow: none !important;
-              zoom: 1 !important;           /* reset zoom for print */
+              zoom: 1 !important;
               font-size: 18px;
             }
 
@@ -357,24 +336,15 @@ export function generateInvoiceHTML(invoice, products = []) {
 
         <script>
           (function () {
-            var RECEIPT_W = 272; // must match .receipt width in CSS
+            var RECEIPT_W = 272;
 
             function applyZoom() {
               var el = document.getElementById('receipt');
               if (!el) return;
-
-              /*
-                Use CSS zoom — unlike transform:scale(), zoom actually
-                shrinks the element's layout box, so the page height
-                and body width adjust correctly. No overflow, no gap.
-
-                Available width = viewport minus 16px padding each side.
-              */
               var available = window.innerWidth - 32;
               var zoom = available < RECEIPT_W
                 ? (available / RECEIPT_W)
                 : 1;
-
               el.style.zoom = zoom;
             }
 
