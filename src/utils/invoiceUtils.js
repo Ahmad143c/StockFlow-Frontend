@@ -193,7 +193,7 @@ export function generateInvoiceHTML(invoice, products = []) {
 
             html {
               background: white;
-              overflow: visible;        /* ← fixed: was missing, needed to undo overflow-x:hidden */
+              overflow-y: hidden;        /* ← fixed: was missing, needed to undo overflow-x:hidden */
             }
 
             body {
