@@ -205,11 +205,11 @@ export function generateInvoiceHTML(invoice, products = []) {
             font-weight: bold;
           }
 
-          /* ── PRINT — BlackCopper BC-88AC 80mm Thermal ──────────── */
+          /* ── PRINT — BlackCopper BC-88AC 88mm Thermal ──────────── */
           @media print {
             @page {
-              size: 80mm auto;
-              margin: 2mm 3mm;
+              size: 88mm auto;
+              margin: 1mm 2mm;
             }
 
             html {
@@ -230,18 +230,22 @@ export function generateInvoiceHTML(invoice, products = []) {
               padding: 0 !important;
               box-shadow: none !important;
               zoom: 1 !important;           /* reset zoom for print */
-              font-size: 11px !important;
-              line-height: 1.2 !important;
+              font-size: 9px !important;
+              line-height: 1.1 !important;
             }
 
-            .header h1         { font-size: 13px !important; margin-bottom: 2px !important; }
-            .header p          { font-size: 10px !important; margin: 1px 0 !important; }
-            .invoice-info div  { font-size: 10px !important; margin: 1px 0 !important; }
-            th, td             { font-size: 9px !important; padding: 2px 1px !important; }
-            .total-row td      { font-size: 10px !important; padding: 2px 1px !important; }
-            .payment-info .row        { font-size: 10px !important; margin: 1px 0 !important; }
-            .payment-info .row.bold   { font-size: 11px !important; margin: 1px 0 !important; }
-            .footer            { font-size: 10px !important; margin-top: 2px !important; }
+            .header {
+              padding-bottom: 2px !important;
+              margin-bottom: 2px !important;
+            }
+            .header h1         { font-size: 11px !important; margin-bottom: 1px !important; }
+            .header p          { font-size: 8px !important; margin: 0.5px 0 !important; }
+            .invoice-info div  { font-size: 8px !important; margin: 0.5px 0 !important; }
+            th, td             { font-size: 7px !important; padding: 1px 0.5px !important; }
+            .total-row td      { font-size: 8px !important; padding: 1px 0.5px !important; }
+            .payment-info .row        { font-size: 8px !important; margin: 0.5px 0 !important; }
+            .payment-info .row.bold   { font-size: 9px !important; margin: 0.5px 0 !important; }
+            .footer            { font-size: 8px !important; margin-top: 1px !important; padding: 1px 0 !important; }
 
             tr      { page-break-inside: avoid; }
             .footer { page-break-after: avoid; }
