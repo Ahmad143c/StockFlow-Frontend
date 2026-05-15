@@ -41,33 +41,42 @@ const FinancialReports = () => {
     setTabValue(newValue);
   };
 
-  const renderTrialBalance = () => (
-    <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
-      <Table>
-        <TableHead>
-          <TableRow sx={{ bgcolor: 'primary.main' }}>
-            <TableCell sx={{ color: 'white', fontWeight: 700 }}>Account Name</TableCell>
-            <TableCell sx={{ color: 'white', fontWeight: 700 }} align="right">Debit</TableCell>
-            <TableCell sx={{ color: 'white', fontWeight: 700 }} align="right">Credit</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {reportData?.accounts?.map((acc, i) => (
-            <TableRow key={i} hover>
-              <TableCell>{acc.name}</TableCell>
-              <TableCell align="right">{acc.debit ? `Rs. ${acc.debit.toLocaleString()}` : '-'}</TableCell>
-              <TableCell align="right">{acc.credit ? `Rs. ${acc.credit.toLocaleString()}` : '-'}</TableCell>
+  const renderTrialBalance = () => {
+    const accounts = Array.isArray(reportData) ? reportData : (reportData?.accounts || []);
+    const totalDebit = accounts.reduce((s, a) => s + (a.category === 'Assets' || a.category === 'Expenses' ? a.balance : 0), 0);
+    const totalCredit = accounts.reduce((s, a) => s + (a.category === 'Liabilities' || a.category === 'Equity' || a.category === 'Income' ? a.balance : 0), 0);
+    
+    return (
+      <TableContainer component={Paper} elevation={2} sx={{ borderRadius: 2 }}>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ bgcolor: 'primary.main' }}>
+              <TableCell sx={{ color: 'white', fontWeight: 700 }}>Account Name</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 700 }} align="right">Debit</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 700 }} align="right">Credit</TableCell>
             </TableRow>
-          ))}
-          <TableRow sx={{ bgcolor: 'action.hover', fontWeight: 700 }}>
-            <TableCell sx={{ fontWeight: 700 }}>TOTAL</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 700 }}>Rs. {reportData?.totalDebit?.toLocaleString()}</TableCell>
-            <TableCell align="right" sx={{ fontWeight: 700 }}>Rs. {reportData?.totalCredit?.toLocaleString()}</TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+          </TableHead>
+          <TableBody>
+            {accounts.map((acc, i) => {
+              const isDebit = acc.category === 'Assets' || acc.category === 'Expenses';
+              return (
+                <TableRow key={i} hover>
+                  <TableCell>{acc.name} ({acc.code})</TableCell>
+                  <TableCell align="right">{isDebit ? `Rs. ${acc.balance.toLocaleString()}` : '-'}</TableCell>
+                  <TableCell align="right">{!isDebit ? `Rs. ${acc.balance.toLocaleString()}` : '-'}</TableCell>
+                </TableRow>
+              );
+            })}
+            <TableRow sx={{ bgcolor: 'action.hover', fontWeight: 700 }}>
+              <TableCell sx={{ fontWeight: 700 }}>TOTAL</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>Rs. {totalDebit.toLocaleString()}</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700 }}>Rs. {totalCredit.toLocaleString()}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
 
   const renderProfitLoss = () => (
     <Paper elevation={2} sx={{ p: 4, borderRadius: 2 }}>
@@ -75,32 +84,32 @@ const FinancialReports = () => {
       <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 4 }}>For the period ended {new Date().toLocaleDateString()}</Typography>
       
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h6" color="primary" sx={{ fontWeight: 700, mb: 1 }}>Revenue</Typography>
+        <Typography variant="h6" color="primary" sx={{ fontWeight: 700, mb: 1 }}>Revenue / Income</Typography>
         <Divider sx={{ mb: 1 }} />
-        {reportData?.revenue?.map((item, i) => (
+        {(reportData?.income || []).map((item, i) => (
           <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', py: 1 }}>
             <Typography>{item.name}</Typography>
-            <Typography>Rs. {item.amount.toLocaleString()}</Typography>
+            <Typography>Rs. {item.balance.toLocaleString()}</Typography>
           </Box>
         ))}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, fontWeight: 700, borderTop: '1px solid #eee' }}>
           <Typography sx={{ fontWeight: 700 }}>Total Revenue</Typography>
-          <Typography sx={{ fontWeight: 700 }}>Rs. {reportData?.totalRevenue?.toLocaleString()}</Typography>
+          <Typography sx={{ fontWeight: 700 }}>Rs. {(reportData?.totalIncome || 0).toLocaleString()}</Typography>
         </Box>
       </Box>
 
       <Box sx={{ mb: 4 }}>
         <Typography variant="h6" color="error" sx={{ fontWeight: 700, mb: 1 }}>Expenses</Typography>
         <Divider sx={{ mb: 1 }} />
-        {reportData?.expenses?.map((item, i) => (
+        {(reportData?.expenses || []).map((item, i) => (
           <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', py: 1 }}>
             <Typography>{item.name}</Typography>
-            <Typography>Rs. {item.amount.toLocaleString()}</Typography>
+            <Typography>Rs. {item.balance.toLocaleString()}</Typography>
           </Box>
         ))}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, fontWeight: 700, borderTop: '1px solid #eee' }}>
           <Typography sx={{ fontWeight: 700 }}>Total Expenses</Typography>
-          <Typography sx={{ fontWeight: 700 }}>Rs. {reportData?.totalExpenses?.toLocaleString()}</Typography>
+          <Typography sx={{ fontWeight: 700 }}>Rs. {(reportData?.totalExpenses || 0).toLocaleString()}</Typography>
         </Box>
       </Box>
 
@@ -116,10 +125,10 @@ const FinancialReports = () => {
       <Grid item xs={12} md={6}>
         <Paper elevation={2} sx={{ p: 3, borderRadius: 2, height: '100%' }}>
           <Typography variant="h6" color="primary.main" sx={{ fontWeight: 700, mb: 2 }}>Assets</Typography>
-          {reportData?.assets?.map((item, i) => (
+          {(reportData?.assets || []).map((item, i) => (
             <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: '1px solid #f0f0f0' }}>
               <Typography variant="body2">{item.name}</Typography>
-              <Typography variant="body2">Rs. {item.amount.toLocaleString()}</Typography>
+              <Typography variant="body2">Rs. {item.balance.toLocaleString()}</Typography>
             </Box>
           ))}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, fontWeight: 700 }}>
@@ -131,10 +140,10 @@ const FinancialReports = () => {
       <Grid item xs={12} md={6}>
         <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mb: 3 }}>
           <Typography variant="h6" color="error.main" sx={{ fontWeight: 700, mb: 2 }}>Liabilities</Typography>
-          {reportData?.liabilities?.map((item, i) => (
+          {(reportData?.liabilities || []).map((item, i) => (
             <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: '1px solid #f0f0f0' }}>
               <Typography variant="body2">{item.name}</Typography>
-              <Typography variant="body2">Rs. {item.amount.toLocaleString()}</Typography>
+              <Typography variant="body2">Rs. {item.balance.toLocaleString()}</Typography>
             </Box>
           ))}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, fontWeight: 700 }}>
@@ -144,10 +153,10 @@ const FinancialReports = () => {
         </Paper>
         <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
           <Typography variant="h6" color="warning.main" sx={{ fontWeight: 700, mb: 2 }}>Equity</Typography>
-          {reportData?.equity?.map((item, i) => (
+          {(reportData?.equity || []).map((item, i) => (
             <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: '1px solid #f0f0f0' }}>
               <Typography variant="body2">{item.name}</Typography>
-              <Typography variant="body2">Rs. {item.amount.toLocaleString()}</Typography>
+              <Typography variant="body2">Rs. {item.balance.toLocaleString()}</Typography>
             </Box>
           ))}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, fontWeight: 700 }}>

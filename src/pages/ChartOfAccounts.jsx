@@ -21,9 +21,14 @@ const ChartOfAccounts = () => {
     setLoading(true);
     setError(null);
     try {
-      // Endpoint to get all GL accounts
-      const res = await API.get('/accounting/accounts');
-      setAccounts(Array.isArray(res.data) ? res.data : []);
+      // Use trial-balance endpoint which returns all accounts
+      const res = await API.get('/accounting/trial-balance');
+      // Backend returns Category, Frontend expects Type
+      const mappedAccounts = (Array.isArray(res.data) ? res.data : []).map(a => ({
+        ...a,
+        type: a.category || 'Asset'
+      }));
+      setAccounts(mappedAccounts);
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch accounts');
     } finally {
