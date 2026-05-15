@@ -333,7 +333,8 @@ const SellerSaleEntry = () => {
       }
     } else if (paymentStatus === 'Paid') {
       if (paidVal < netAmount) {
-        newStatus = paidVal > 0 ? 'Partial Paid' : 'Unpaid';
+        // If method is Cash, revert to Unpaid. For other methods, use Partial Paid.
+        newStatus = (paymentMethod === 'Cash' || paidVal <= 0) ? 'Unpaid' : 'Partial Paid';
       }
     }
 
@@ -346,7 +347,7 @@ const SellerSaleEntry = () => {
         }
       }
     }
-  }, [paidAmount, receivedAmount, paymentStatus, netAmount]);
+  }, [paidAmount, receivedAmount, paymentStatus, netAmount, paymentMethod]);
 
   const uploadPaymentProof = async (fileToUpload = null) => {
     const file = fileToUpload || paymentProofFile;
@@ -709,22 +710,27 @@ const SellerSaleEntry = () => {
 
   // auto-adjust payment status in edit form based on paidAmount and net value
   useEffect(() => {
-    const editNetAmount = editForm.items.reduce((sum, i) => sum + ((Number(i.perPiecePrice) * Number(i.quantity)) - (Number(i.discount) || 0)), 0);
+    const editNetAmount = editForm.items.reduce((sum, i) => sum + ((Number(i.perPiecePrice) * Number(i.quantity)) - (Number(i.discount) || 0)), 0) - (Number(editForm.discountAmount) || 0);
     const paidVal = Number(editForm.paidAmount || 0);
     let newStatus = editForm.paymentStatus;
+
     if (editNetAmount > 0) {
-      if (paidVal >= editNetAmount) {
-        newStatus = 'Paid';
-      } else if (paidVal > 0) {
-        newStatus = 'Partial Paid';
-      } else {
-        newStatus = 'Unpaid';
+      if (editForm.paymentStatus === 'Partial Paid') {
+        if (paidVal >= editNetAmount) newStatus = 'Paid';
+      } else if (editForm.paymentStatus === 'Unpaid') {
+        if (paidVal >= editNetAmount) newStatus = 'Paid';
+      } else if (editForm.paymentStatus === 'Paid') {
+        if (paidVal < editNetAmount) {
+          // If method is Cash, revert to Unpaid. For other methods, use Partial Paid.
+          newStatus = (editForm.paymentMethod === 'Cash' || paidVal <= 0) ? 'Unpaid' : 'Partial Paid';
+        }
       }
     }
+
     if (newStatus !== editForm.paymentStatus) {
       setEditForm(prev => ({ ...prev, paymentStatus: newStatus }));
     }
-  }, [editForm.paidAmount, editForm.items, editForm.paymentStatus]);
+  }, [editForm.paidAmount, editForm.items, editForm.paymentStatus, editForm.paymentMethod, editForm.discountAmount]);
   const handleResendEmail = async (sale) => {
     try {
       const token = localStorage.getItem('token');
