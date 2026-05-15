@@ -19,6 +19,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Link } from 'react-router-dom';
 import ListIcon from '@mui/icons-material/List';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import HistoryIcon from '@mui/icons-material/History';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import BookIcon from '@mui/icons-material/Book';
 
 const drawerWidth = 220;
 const closedWidth = 60;
@@ -59,6 +64,10 @@ const AdminSidebar = ({ user, handleLogout }) => {
   const [openInventory, setOpenInventory] = useState(
     startsWith('/admin/add-purchase') || startsWith('/admin/purchases-report')
   );
+  const [openCustomerLedger, setOpenCustomerLedger] = useState(
+    startsWith('/admin/customer-ledger') || startsWith('/admin/outstanding-balances') || startsWith('/admin/customer-statement')
+  );
+  const [openAccounting, setOpenAccounting] = useState(startsWith('/admin/general-ledger'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileVisible, setMobileVisible] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
@@ -73,6 +82,10 @@ const AdminSidebar = ({ user, handleLogout }) => {
     );
     setOpenVendors(startsWith('/admin/vendors'));
     setOpenInventory(startsWith('/admin/add-purchase') || startsWith('/admin/purchases-report'));
+    setOpenCustomerLedger(
+      startsWith('/admin/customer-ledger') || startsWith('/admin/outstanding-balances') || startsWith('/admin/customer-statement')
+    );
+    setOpenAccounting(startsWith('/admin/general-ledger'));
   }, [location]);
 
   // Custom style for icon and text spacing - memoized
@@ -132,6 +145,8 @@ const AdminSidebar = ({ user, handleLogout }) => {
   const handleSellerToggle = useCallback(() => setOpenSeller(p => !p), []);
   const handleVendorsToggle = useCallback(() => setOpenVendors(p => !p), []);
   const handleInventoryToggle = useCallback(() => setOpenInventory(p => !p), []);
+  const handleCustomerLedgerToggle = useCallback(() => setOpenCustomerLedger(p => !p), []);
+  const handleAccountingToggle = useCallback(() => setOpenAccounting(p => !p), []);
 
   return (
     <Box
@@ -379,6 +394,92 @@ const AdminSidebar = ({ user, handleLogout }) => {
             </ListItem>
           </List>
         </Collapse>
+
+        {/* Customer Ledger Section */}
+        <Tooltip title={!sidebarOpen ? "Customer Ledger" : ""} placement="right">
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleCustomerLedgerToggle}>
+              <ListItemIcon sx={iconTextStyle}><AccountBalanceWalletIcon /></ListItemIcon>
+              <ListItemText primary="Customer Ledger" sx={{ display: showLabels ? 'block' : 'none' }} />
+              {sidebarOpen && (openCustomerLedger ? <ExpandLess /> : <ExpandMore />)}
+            </ListItemButton>
+          </ListItem>
+        </Tooltip>
+        <Collapse in={openCustomerLedger} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link} {...linkProps}
+                to="/admin/customer-ledger"
+                selected={isActive('/admin/customer-ledger')}
+                sx={{ ...activeSx, pl: sidebarOpen ? 4 : 1.5 }}
+              >
+                <ListItemIcon sx={iconTextStyle}><ListIcon /></ListItemIcon>
+                <ListItemText primary="Ledger List" sx={{ display: showLabels ? 'block' : 'none' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link} {...linkProps}
+                to="/admin/outstanding-balances"
+                selected={isActive('/admin/outstanding-balances')}
+                sx={{ ...activeSx, pl: sidebarOpen ? 4 : 1.5 }}
+              >
+                <ListItemIcon sx={iconTextStyle}><HistoryIcon /></ListItemIcon>
+                <ListItemText primary="Outstanding" sx={{ display: showLabels ? 'block' : 'none' }} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
+
+        {/* Accounting Section */}
+        <Tooltip title={!sidebarOpen ? "Accounting" : ""} placement="right">
+          <ListItem disablePadding>
+            <ListItemButton onClick={handleAccountingToggle}>
+              <ListItemIcon sx={iconTextStyle}><AccountBalanceIcon /></ListItemIcon>
+              <ListItemText primary="Accounting" sx={{ display: showLabels ? 'block' : 'none' }} />
+              {sidebarOpen && (openAccounting ? <ExpandLess /> : <ExpandMore />)}
+            </ListItemButton>
+          </ListItem>
+        </Tooltip>
+        <Collapse in={openAccounting} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link} {...linkProps}
+                to="/admin/general-ledger/accounts"
+                selected={isActive('/admin/general-ledger/accounts')}
+                sx={{ ...activeSx, pl: sidebarOpen ? 4 : 1.5 }}
+              >
+                <ListItemIcon sx={iconTextStyle}><ListAltIcon /></ListItemIcon>
+                <ListItemText primary="Chart of Accounts" sx={{ display: showLabels ? 'block' : 'none' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link} {...linkProps}
+                to="/admin/general-ledger/journal"
+                selected={isActive('/admin/general-ledger/journal')}
+                sx={{ ...activeSx, pl: sidebarOpen ? 4 : 1.5 }}
+              >
+                <ListItemIcon sx={iconTextStyle}><BookIcon /></ListItemIcon>
+                <ListItemText primary="Journal Entries" sx={{ display: showLabels ? 'block' : 'none' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link} {...linkProps}
+                to="/admin/general-ledger/reports"
+                selected={isActive('/admin/general-ledger/reports')}
+                sx={{ ...activeSx, pl: sidebarOpen ? 4 : 1.5 }}
+              >
+                <ListItemIcon sx={iconTextStyle}><BarChartIcon /></ListItemIcon>
+                <ListItemText primary="Financial Reports" sx={{ display: showLabels ? 'block' : 'none' }} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
+
         {/* Sales Report Section */}
   <Tooltip title={!sidebarOpen ? "Sales Report" : ""} placement="right">
     <ListItem disablePadding>

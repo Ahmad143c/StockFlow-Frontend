@@ -32,6 +32,12 @@ import SellerInvoiceGenerator from './pages/SellerInvoiceGenerator';
 import SellerClientDetail from './pages/SellerClientDetail';
 import AdminSalesReport from './pages/AdminSalesReport';
 import AdminRefunds from './pages/AdminRefunds';
+import CustomerLedger from './pages/CustomerLedger';
+import CustomerStatement from './pages/CustomerStatement';
+import OutstandingBalances from './pages/OutstandingBalances';
+import ChartOfAccounts from './pages/ChartOfAccounts';
+import JournalEntries from './pages/JournalEntries';
+import FinancialReports from './pages/FinancialReports';
 import { DarkModeProvider, useDarkMode } from './context/DarkModeContext';
 
 function AppContent() {
@@ -102,6 +108,16 @@ function AppContent() {
             <Route path="create-seller" element={<CreateSeller />} />
             <Route path="sales-report" element={<AdminSalesReport />} />
             <Route path="refunds" element={<AdminRefunds />} />
+            
+            {/* Customer Ledger Routes */}
+            <Route path="customer-ledger" element={<CustomerLedger />} />
+            <Route path="customer-statement/:customerId" element={<CustomerStatement />} />
+            <Route path="outstanding-balances" element={<OutstandingBalances />} />
+
+            {/* General Ledger Routes */}
+            <Route path="general-ledger/accounts" element={<ChartOfAccounts />} />
+            <Route path="general-ledger/journal" element={<JournalEntries />} />
+            <Route path="general-ledger/reports" element={<FinancialReports />} />
           </Route>
           <Route path="/seller/*" element={isSeller ? <SellerDashboard darkMode={darkMode} setDarkMode={setDarkMode} user={user} handleLogout={handleLogout} /> : <Login /> }>
             <Route index element={<SellerHome />} />
