@@ -1,13 +1,15 @@
 import axios from 'axios';
 
-// Detect if running in GitHub Codespaces
+// Detect environment
 const isCodespaces = window.location.hostname.includes('.app.github.dev');
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-// In Codespaces, use the Codespaces URL with port 5000 for backend
-// Otherwise, use explicit Railway backend URL
-const baseURL = isCodespaces
-  ? window.location.origin.replace('-3000', '-5000') + '/api'
-  : 'https://stockflow-backend-production-22de.up.railway.app/api';
+// URL logic: localhost -> local backend, Codespaces -> codespace backend, else -> production
+const baseURL = isLocalhost
+  ? 'http://localhost:5000/api'
+  : isCodespaces
+    ? window.location.origin.replace('-3000', '-5000') + '/api'
+    : 'https://stockflow-backend-production-22de.up.railway.app/api';
 
 const API = axios.create({
   baseURL,
