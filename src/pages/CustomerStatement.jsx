@@ -25,34 +25,37 @@ const CustomerStatement = () => {
     setError(null);
     try {
       let ledgerData = null;
+      let customerInfo = null;
+
+      // Try formal API first
       try {
         const res = await API.get(`/customers/ledger/${customerId}`);
         if (Array.isArray(res.data) && res.data.length > 0) {
           ledgerData = res.data;
+          const custRes = await API.get(`/customers/${customerId}`).catch(() => null);
+          customerInfo = custRes?.data;
         }
       } catch (e) {
-        console.log('Backend ledger failed, attempting fallback');
+        console.log('Backend ledger API failed or returned 500, attempting fallback logic...');
       }
 
+      // If no data from formal API, derive from sales
       if (!ledgerData) {
-        console.log('Deriving statement from /sales');
         const [salesRes, customersRes] = await Promise.all([
           API.get('/sales'),
           API.get('/customers').catch(() => ({ data: [] }))
         ]);
         
         const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
-        const customer = Array.isArray(customersRes.data) 
+        customerInfo = customerInfo || (Array.isArray(customersRes.data) 
           ? customersRes.data.find(c => c._id === customerId)
-          : null;
+          : null);
 
-        // Filter sales for this customer
         const customerSales = allSales.filter(s => 
           String(s.customerId?._id || s.customerId || s.customerName) === String(customerId)
         );
 
-        // Map sales to ledger entries
-        const ledgerEntries = customerSales.map(s => ({
+        ledgerData = customerSales.map(s => ({
           transactionDate: s.date || s.createdAt,
           transactionType: 'Sale',
           debit: Number(s.netAmount || s.totalAmount || 0),
@@ -60,20 +63,18 @@ const CustomerStatement = () => {
           description: `Invoice: ${s.invoiceNumber || 'Manual'}`
         }));
 
-        setData({
-          customer: customer || { name: customerId, _id: customerId },
-          ledger: ledgerEntries
-        });
-      } else {
-        // Fetch customer info separately if ledger came from API
-        const custRes = await API.get(`/customers/${customerId}`).catch(() => null);
-        setData({
-          customer: custRes?.data || { name: 'Customer', _id: customerId },
-          ledger: ledgerData
-        });
+        if (!customerInfo) {
+          customerInfo = { name: customerId, _id: customerId };
+        }
       }
+
+      setData({
+        customer: customerInfo,
+        ledger: ledgerData
+      });
     } catch (e) {
-      setError(e.response?.data?.message || 'Failed to fetch customer ledger');
+      console.error('Statement fetch/fallback failed:', e);
+      setError('Failed to load customer statement. Please try again later.');
     } finally {
       setLoading(false);
     }
