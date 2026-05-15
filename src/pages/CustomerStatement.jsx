@@ -24,43 +24,53 @@ const CustomerStatement = () => {
     setLoading(true);
     setError(null);
     try {
+      let ledgerData = null;
       try {
         const res = await API.get(`/customers/ledger/${customerId}`);
-        setData(res.data);
-      } catch (e) {
-        if (e.response?.status === 404) {
-          console.log('Backend /customers/ledger not found, deriving from /sales');
-          const [salesRes, customersRes] = await Promise.all([
-            API.get('/sales'),
-            API.get('/customers').catch(() => ({ data: [] }))
-          ]);
-          
-          const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
-          const customer = Array.isArray(customersRes.data) 
-            ? customersRes.data.find(c => c._id === customerId)
-            : null;
-
-          // Filter sales for this customer
-          const customerSales = allSales.filter(s => 
-            String(s.customerId?._id || s.customerId || s.customerName) === String(customerId)
-          );
-
-          // Map sales to ledger entries
-          const ledgerEntries = customerSales.map(s => ({
-            date: s.date || s.createdAt,
-            type: 'Invoice',
-            amount: Number(s.netAmount || s.totalAmount || 0),
-            reference: s.invoiceNumber || s._id,
-            description: 'Sales Invoice'
-          }));
-
-          setData({
-            customer: customer || { name: 'Customer', _id: customerId },
-            ledger: ledgerEntries
-          });
-        } else {
-          throw e;
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          ledgerData = res.data;
         }
+      } catch (e) {
+        console.log('Backend ledger failed, attempting fallback');
+      }
+
+      if (!ledgerData) {
+        console.log('Deriving statement from /sales');
+        const [salesRes, customersRes] = await Promise.all([
+          API.get('/sales'),
+          API.get('/customers').catch(() => ({ data: [] }))
+        ]);
+        
+        const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
+        const customer = Array.isArray(customersRes.data) 
+          ? customersRes.data.find(c => c._id === customerId)
+          : null;
+
+        // Filter sales for this customer
+        const customerSales = allSales.filter(s => 
+          String(s.customerId?._id || s.customerId || s.customerName) === String(customerId)
+        );
+
+        // Map sales to ledger entries
+        const ledgerEntries = customerSales.map(s => ({
+          transactionDate: s.date || s.createdAt,
+          transactionType: 'Sale',
+          debit: Number(s.netAmount || s.totalAmount || 0),
+          credit: 0,
+          description: `Invoice: ${s.invoiceNumber || 'Manual'}`
+        }));
+
+        setData({
+          customer: customer || { name: customerId, _id: customerId },
+          ledger: ledgerEntries
+        });
+      } else {
+        // Fetch customer info separately if ledger came from API
+        const custRes = await API.get(`/customers/${customerId}`).catch(() => null);
+        setData({
+          customer: custRes?.data || { name: 'Customer', _id: customerId },
+          ledger: ledgerData
+        });
       }
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch customer ledger');
