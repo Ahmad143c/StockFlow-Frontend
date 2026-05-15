@@ -46,14 +46,13 @@ const ChartOfAccounts = () => {
   );
 
   const getAccountTypeColor = (type) => {
-    switch(type) {
-      case 'Asset': return 'success';
-      case 'Liability': return 'error';
-      case 'Equity': return 'warning';
-      case 'Revenue': return 'primary';
-      case 'Expense': return 'secondary';
-      default: return 'default';
-    }
+    const normalized = type?.toLowerCase();
+    if (normalized?.includes('asset')) return 'success';
+    if (normalized?.includes('liabilit')) return 'error';
+    if (normalized?.includes('equity')) return 'warning';
+    if (normalized?.includes('income') || normalized?.includes('revenue')) return 'primary';
+    if (normalized?.includes('expense')) return 'secondary';
+    return 'default';
   };
 
   return (
