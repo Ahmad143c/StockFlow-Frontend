@@ -97,21 +97,22 @@ export function generateInvoiceHTML(invoice, products = []) {
           /* ── Receipt card ───────────────────────────────────────── */
           .receipt {
             font-family: 'Times New Roman', Times, serif;
-            font-size: 18px;
-            line-height: 1.45;
+            font-size: 16px;
+            line-height: 1.4;
             color: #000;
             background: #fff;
             width: 272px;
-            padding: 8px 6px 12px;
-            box-shadow: 0 1px 8px rgba(0,0,0,0.15);
+            padding: 10px 8px;
+            box-shadow: 0 1px 12px rgba(0,0,0,0.2);
+            border: 1px solid #ddd;
           }
 
           /* ── Header ────────────────────────────────────────────── */
           .header {
             text-align: center;
-            padding-bottom: 3mm;
-            margin-bottom: 3mm;
-            border-bottom: 2px dashed #000;
+            padding-bottom: 2mm;
+            margin-bottom: 2mm;
+            border-bottom: 1px dashed #000;
           }
           .header h1 {
             font-size: 20px;
@@ -122,55 +123,55 @@ export function generateInvoiceHTML(invoice, products = []) {
           .header p { font-size: 16px; margin: 1px 0; }
 
           /* ── Invoice meta ──────────────────────────────────────── */
-          .invoice-info { margin: 2mm 0; }
-          .invoice-info div { font-size: 16px; margin: 1.5mm 0; }
+          .invoice-info { margin: 1mm 0; }
+          .invoice-info div { font-size: 14px; margin: 1mm 0; }
           .invoice-info strong { font-weight: bold; }
 
           /* ── Items table ───────────────────────────────────────── */
           table {
             width: 100%;
             border-collapse: collapse;
-            margin: 2mm 0;
+            margin: 1mm 0;
           }
           th {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            padding: 2mm 1mm;
-            border-top: 2px solid #000;
-            border-bottom: 2px solid #000;
+            padding: 1.5mm 0.5mm;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
             text-align: left;
           }
           td {
-            font-size: 16px;
-            padding: 2mm 1mm;
-            border-bottom: 1px dashed #888;
+            font-size: 14px;
+            padding: 1.5mm 0.5mm;
+            border-bottom: 1px dashed #ccc;
             vertical-align: top;
           }
-          tr:last-child td { border-bottom: 2px solid #000; }
+          tr:last-child td { border-bottom: 1px solid #000; }
           .text-right { text-align: right !important; }
 
           .total-row td {
-            font-size: 17px;
+            font-size: 15px;
             font-weight: bold;
-            border-top: 2px solid #000;
-            border-bottom: 2px solid #000;
-            padding: 2mm 1mm;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 1.5mm 0.5mm;
           }
 
           /* ── Payment summary ───────────────────────────────────── */
           .payment-info {
-            margin-top: 2mm;
-            padding-top: 2mm;
-            border-top: 2px dashed #000;
+            margin-top: 1mm;
+            padding-top: 1mm;
+            border-top: 1px dashed #000;
           }
           .payment-info .row {
             display: flex;
             justify-content: space-between;
-            font-size: 16px;
-            margin: 1.5mm 0;
+            font-size: 14px;
+            margin: 1mm 0;
           }
           .payment-info .row.bold {
-            font-size: 17px;
+            font-size: 15px;
             font-weight: bold;
           }
 
@@ -188,41 +189,45 @@ export function generateInvoiceHTML(invoice, products = []) {
           @media print {
             @page {
               size: 80mm auto;
-              margin: 2mm 3mm;
+              margin: 0;
             }
 
-            html {
+            html, body {
               background: white;
-              overflow-y: hidde;        /* ← fixed: was missing, needed to undo overflow-x:hidden */
+              margin: 0;
+              padding: 0;
+              width: 80mm;
+              -webkit-print-color-adjust: exact;
             }
 
             body {
-              width: auto;              /* ← FIXED: was 100vw which collapses in print context */
-              overflow: visible;        /* ← FIXED: was not set, inherited overflow-x:hidden from screen */
               display: block;
-              padding: 0;
-              background: white;
+              overflow: visible;
             }
 
             .receipt {
-              width: 100% !important;   /* ← FIXED: was 272px, now fills the 80mm @page width */
-              padding: 0 !important;
+              width: 72mm !important;
+              max-width: 72mm !important;
+              margin: 0 auto !important;
+              padding: 2mm 0 !important;
               box-shadow: none !important;
+              border: none !important;
               zoom: 1 !important;
-              font-size: 18px;
+              transform: none !important;
+              font-size: 16px;
             }
 
-            .header h1         { font-size: 20px; }
-            .header p          { font-size: 16px; }
-            .invoice-info div  { font-size: 16px; }
-            th, td             { font-size: 16px; }
-            .total-row td      { font-size: 17px; }
-            .payment-info .row        { font-size: 16px; }
-            .payment-info .row.bold   { font-size: 17px; }
-            .footer            { font-size: 16px; }
+            .header h1         { font-size: 18px; }
+            .header p          { font-size: 14px; }
+            .invoice-info div  { font-size: 14px; margin: 1mm 0; }
+            th, td             { font-size: 14px; padding: 1mm 0.5mm; }
+            .total-row td      { font-size: 15px; }
+            .payment-info .row        { font-size: 14px; margin: 1mm 0; }
+            .payment-info .row.bold   { font-size: 15px; }
+            .footer            { font-size: 14px; margin-top: 2mm; padding-bottom: 5mm; }
 
             tr      { page-break-inside: avoid; }
-            .footer { page-break-after: avoid; }
+            .header, .payment-info, .footer { page-break-inside: avoid; }
           }
         </style>
       </head>
