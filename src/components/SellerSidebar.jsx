@@ -176,6 +176,21 @@ const SellerSidebar = ({ user, handleLogout }) => {
             </ListItemButton>
           </ListItem>
         </Tooltip>
+
+        <Tooltip title={!sidebarOpen ? "Customer Ledger" : ""} placement="right">
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link} {...linkProps}
+              to="/seller/customer-ledger"
+              key="CustomerLedger"
+              selected={isActive('/seller/customer-ledger')}
+              sx={{ ...activeSx, ...hoverSx }}
+            >
+              <ListItemIcon sx={iconTextStyle}><AccountBalanceWalletIcon /></ListItemIcon>
+              <ListItemText primary="Customer Ledger" sx={{ display: showLabels ? 'block' : 'none' }} />
+            </ListItemButton>
+          </ListItem>
+        </Tooltip>
         {/* Products Section */}
         <Tooltip title={!sidebarOpen ? "Products" : ""} placement="right">
           <ListItem disablePadding>

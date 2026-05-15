@@ -21,8 +21,46 @@ const OutstandingBalances = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await API.get('/customers/outstanding');
-      setData(Array.isArray(res.data) ? res.data : []);
+      try {
+        const res = await API.get('/customers/outstanding');
+        setData(Array.isArray(res.data) ? res.data : []);
+      } catch (e) {
+        if (e.response?.status === 404) {
+          console.log('Backend /customers/outstanding not found, falling back to /sales aggregation');
+          const salesRes = await API.get('/sales');
+          const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
+          
+          const map = {};
+          allSales.forEach(s => {
+            const status = (s.paymentStatus || '').toLowerCase();
+            if (status !== 'paid') {
+              const name = s.customerName || s.customer?.name || 'Unknown';
+              const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
+              const id = s.customerId?._id || s.customerId || name;
+
+              if (!map[id]) {
+                map[id] = {
+                  _id: id,
+                  name,
+                  contact,
+                  totalPurchases: 0,
+                  totalPaid: 0,
+                  remainingBalance: 0
+                };
+              }
+              const net = Number(s.netAmount || s.totalAmount || 0);
+              const paid = Number(s.paidAmount || s.cashAmount || 0);
+              map[id].totalPurchases += net;
+              map[id].totalPaid += paid;
+              map[id].remainingBalance += (net - paid);
+            }
+          });
+          // Only include those with actual remaining balance
+          setData(Object.values(map).filter(c => c.remainingBalance > 0));
+        } else {
+          throw e;
+        }
+      }
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch outstanding balances');
     } finally {
@@ -102,7 +140,7 @@ const OutstandingBalances = () => {
                         <Chip label={severity} color={severityColor} size="small" />
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton color="primary" onClick={() => navigate(`/admin/customer-statement/${customer._id}`)}>
+                        <IconButton color="primary" onClick={() => navigate(`../customer-statement/${customer._id}`)}>
                           <VisibilityIcon />
                         </IconButton>
                       </TableCell>

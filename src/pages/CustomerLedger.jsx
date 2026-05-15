@@ -28,8 +28,43 @@ const CustomerLedger = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await API.get('/customers');
-      setCustomers(Array.isArray(res.data) ? res.data : []);
+      try {
+        const res = await API.get('/customers');
+        setCustomers(Array.isArray(res.data) ? res.data : []);
+      } catch (e) {
+        // Fallback: If /customers returns 404, aggregate from /sales
+        if (e.response?.status === 404) {
+          console.log('Backend /customers not found, falling back to /sales aggregation');
+          const salesRes = await API.get('/sales');
+          const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
+          
+          const map = {};
+          allSales.forEach(s => {
+            const name = s.customerName || s.customer?.name || 'Unknown';
+            const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
+            const id = s.customerId?._id || s.customerId || name; // Use name as ID if no ID
+
+            if (!map[id]) {
+              map[id] = {
+                _id: id,
+                name,
+                contact,
+                totalPurchases: 0,
+                totalPaid: 0,
+                remainingBalance: 0
+              };
+            }
+            const net = Number(s.netAmount || s.totalAmount || 0);
+            const paid = Number(s.paidAmount || s.cashAmount || 0);
+            map[id].totalPurchases += net;
+            map[id].totalPaid += paid;
+            map[id].remainingBalance += (net - paid);
+          });
+          setCustomers(Object.values(map));
+        } else {
+          throw e; // Rethrow other errors
+        }
+      }
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch customers');
     } finally {
@@ -153,7 +188,7 @@ const CustomerLedger = () => {
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                         <Tooltip title="View Statement">
-                          <IconButton color="primary" onClick={() => navigate(`/admin/customer-statement/${customer._id}`)}>
+                          <IconButton color="primary" onClick={() => navigate(`../customer-statement/${customer._id}`)}>
                             <VisibilityIcon />
                           </IconButton>
                         </Tooltip>

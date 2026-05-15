@@ -127,6 +127,11 @@ function AppContent() {
             <Route path="refunds" element={<SellerRefunds />} />
             <Route path="generate-invoice" element={<SellerInvoiceGenerator />} />
             <Route path="clients" element={<SellerClientDetail sellerId={user?._id} />} />
+            
+            {/* Customer Ledger Routes for Seller */}
+            <Route path="customer-ledger" element={<CustomerLedger />} />
+            <Route path="customer-statement/:customerId" element={<CustomerStatement />} />
+            <Route path="outstanding-balances" element={<OutstandingBalances />} />
           </Route>
           <Route path="*" element={<Login />} />
         </Routes>

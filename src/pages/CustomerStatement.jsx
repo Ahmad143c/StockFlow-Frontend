@@ -24,8 +24,44 @@ const CustomerStatement = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await API.get(`/customers/ledger/${customerId}`);
-      setData(res.data);
+      try {
+        const res = await API.get(`/customers/ledger/${customerId}`);
+        setData(res.data);
+      } catch (e) {
+        if (e.response?.status === 404) {
+          console.log('Backend /customers/ledger not found, deriving from /sales');
+          const [salesRes, customersRes] = await Promise.all([
+            API.get('/sales'),
+            API.get('/customers').catch(() => ({ data: [] }))
+          ]);
+          
+          const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
+          const customer = Array.isArray(customersRes.data) 
+            ? customersRes.data.find(c => c._id === customerId)
+            : null;
+
+          // Filter sales for this customer
+          const customerSales = allSales.filter(s => 
+            String(s.customerId?._id || s.customerId || s.customerName) === String(customerId)
+          );
+
+          // Map sales to ledger entries
+          const ledgerEntries = customerSales.map(s => ({
+            date: s.date || s.createdAt,
+            type: 'Invoice',
+            amount: Number(s.netAmount || s.totalAmount || 0),
+            reference: s.invoiceNumber || s._id,
+            description: 'Sales Invoice'
+          }));
+
+          setData({
+            customer: customer || { name: 'Customer', _id: customerId },
+            ledger: ledgerEntries
+          });
+        } else {
+          throw e;
+        }
+      }
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch customer ledger');
     } finally {
@@ -62,8 +98,8 @@ const CustomerStatement = () => {
     <Box sx={{ p: { xs: 1, md: 3 } }}>
       {/* Breadcrumbs */}
       <Breadcrumbs sx={{ mb: 2 }}>
-        <MuiLink component={Link} to="/admin" underline="hover" color="inherit">Dashboard</MuiLink>
-        <MuiLink component={Link} to="/admin/customer-ledger" underline="hover" color="inherit">Ledger</MuiLink>
+        <MuiLink component={Link} to=".." underline="hover" color="inherit">Dashboard</MuiLink>
+        <MuiLink component={Link} to="../customer-ledger" underline="hover" color="inherit">Ledger</MuiLink>
         <Typography color="text.primary">Statement</Typography>
       </Breadcrumbs>
 
