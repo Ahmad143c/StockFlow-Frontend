@@ -21,45 +21,50 @@ const OutstandingBalances = () => {
     setLoading(true);
     setError(null);
     try {
+      let formalOutstanding = [];
       try {
         const res = await API.get('/customers/outstanding');
-        setData(Array.isArray(res.data) ? res.data : []);
+        formalOutstanding = Array.isArray(res.data) ? res.data : [];
       } catch (e) {
-        if (e.response?.status === 404) {
-          console.log('Backend /customers/outstanding not found, falling back to /sales aggregation');
-          const salesRes = await API.get('/sales');
-          const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
-          
-          const map = {};
-          allSales.forEach(s => {
-            const status = (s.paymentStatus || '').toLowerCase();
-            if (status !== 'paid') {
-              const name = s.customerName || s.customer?.name || 'Unknown';
-              const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
-              const id = s.customerId?._id || s.customerId || name;
+        if (e.response?.status !== 404) throw e;
+        console.log('Backend /customers/outstanding not found');
+      }
 
-              if (!map[id]) {
-                map[id] = {
-                  _id: id,
-                  name,
-                  contact,
-                  totalPurchases: 0,
-                  totalPaid: 0,
-                  remainingBalance: 0
-                };
-              }
-              const net = Number(s.netAmount || s.totalAmount || 0);
-              const paid = Number(s.paidAmount || s.cashAmount || 0);
-              map[id].totalPurchases += net;
-              map[id].totalPaid += paid;
-              map[id].remainingBalance += (net - paid);
+      // If formal list is empty, aggregate from sales
+      if (formalOutstanding.length === 0) {
+        console.log('No formal outstanding balances found, aggregating from /sales');
+        const salesRes = await API.get('/sales');
+        const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
+        
+        const map = {};
+        allSales.forEach(s => {
+          const status = (s.paymentStatus || '').toLowerCase();
+          if (status !== 'paid' && status !== 'clear') {
+            const name = s.customerName || s.customer?.name || 'Unknown';
+            const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
+            const id = s.customerId?._id || s.customerId || name;
+
+            if (!map[id]) {
+              map[id] = {
+                _id: id,
+                name,
+                contact,
+                totalPurchases: 0,
+                totalPaid: 0,
+                remainingBalance: 0
+              };
             }
-          });
-          // Only include those with actual remaining balance
-          setData(Object.values(map).filter(c => c.remainingBalance > 0));
-        } else {
-          throw e;
-        }
+            const net = Number(s.netAmount || s.totalAmount || 0);
+            const paid = Number(s.paidAmount || s.cashAmount || 0);
+            map[id].totalPurchases += net;
+            map[id].totalPaid += paid;
+            map[id].remainingBalance += (net - paid);
+          }
+        });
+        // Filter to only those with actual balance > 0
+        setData(Object.values(map).filter(c => c.remainingBalance > 0));
+      } else {
+        setData(formalOutstanding);
       }
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch outstanding balances');
