@@ -24,7 +24,28 @@ const JournalEntries = () => {
       const res = await API.get('/accounting/journal');
       setEntries(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
-      setError(e.response?.data?.message || 'Failed to fetch journal entries');
+      if (e.response?.status === 404) {
+        setError('Journal API not found. Please ensure the backend changes are deployed. Fallback: Showing recent sales as journal entries.');
+        // Fallback: Fetch sales as a proxy for sales journal
+        try {
+          const salesRes = await API.get('/sales');
+          const sales = Array.isArray(salesRes.data) ? salesRes.data : [];
+          const proxyEntries = sales.map(s => ({
+            _id: s._id,
+            date: s.date || s.createdAt,
+            reference: s.invoiceNumber || s._id,
+            description: `Sale to ${s.customerName || 'Walk-in'}`,
+            accountName: 'Sales Revenue',
+            type: 'Credit',
+            amount: Number(s.netAmount || s.totalAmount || 0)
+          }));
+          setEntries(proxyEntries);
+        } catch (err) {
+          setError('Failed to fetch journal fallback data');
+        }
+      } else {
+        setError(e.response?.data?.message || 'Failed to fetch journal entries');
+      }
     } finally {
       setLoading(false);
     }
