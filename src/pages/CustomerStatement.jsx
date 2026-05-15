@@ -27,19 +27,25 @@ const CustomerStatement = () => {
       let ledgerData = null;
       let customerInfo = null;
 
-      // Try formal API first
-      try {
-        const res = await API.get(`/customers/ledger/${customerId}`);
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          ledgerData = res.data;
-          const custRes = await API.get(`/customers/${customerId}`).catch(() => null);
-          customerInfo = custRes?.data;
+      // Only try the formal API if the ID looks like a valid MongoDB ObjectId (24 hex chars)
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(customerId);
+
+      if (isObjectId) {
+        try {
+          const res = await API.get(`/customers/ledger/${customerId}`);
+          if (Array.isArray(res.data) && res.data.length > 0) {
+            ledgerData = res.data;
+            const custRes = await API.get(`/customers/${customerId}`).catch(() => null);
+            customerInfo = custRes?.data;
+          }
+        } catch (e) {
+          console.log('Formal ledger API failed, falling back to sales aggregation');
         }
-      } catch (e) {
-        console.log('Backend ledger API failed or returned 500, attempting fallback logic...');
+      } else {
+        console.log('Customer ID is not an ObjectId (likely a name), skipping API and using fallback...');
       }
 
-      // If no data from formal API, derive from sales
+      // If no data from formal API (or skipped), derive from sales
       if (!ledgerData) {
         const [salesRes, customersRes] = await Promise.all([
           API.get('/sales'),
