@@ -17,6 +17,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import { Link } from 'react-router-dom';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 const drawerWidth = 220;
 const closedWidth = 60;
