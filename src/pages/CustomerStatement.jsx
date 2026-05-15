@@ -47,6 +47,7 @@ const CustomerStatement = () => {
 
       // If no data from formal API (or skipped), derive from sales
       if (!ledgerData) {
+        console.log('Comprehensive derivation from /sales...');
         const [salesRes, customersRes] = await Promise.all([
           API.get('/sales'),
           API.get('/customers').catch(() => ({ data: [] }))
@@ -61,16 +62,55 @@ const CustomerStatement = () => {
           String(s.customerId?._id || s.customerId || s.customerName) === String(customerId)
         );
 
-        ledgerData = customerSales.map(s => ({
-          transactionDate: s.date || s.createdAt,
-          transactionType: 'Sale',
-          debit: Number(s.netAmount || s.totalAmount || 0),
-          credit: 0,
-          description: `Invoice: ${s.invoiceNumber || 'Manual'}`
-        }));
+        const entries = [];
+        let totalPurchases = 0;
+        let totalPaid = 0;
+
+        customerSales.forEach(s => {
+          const net = Number(s.netAmount || s.totalAmount || 0);
+          const paid = Number(s.paidAmount || s.cashAmount || 0);
+          
+          totalPurchases += net;
+          totalPaid += paid;
+
+          // Add Invoice Entry
+          entries.push({
+            date: s.date || s.createdAt,
+            type: 'Invoice',
+            amount: net,
+            reference: s.invoiceNumber || s._id,
+            description: `Sales Invoice ${s.invoiceNumber || ''}`
+          });
+
+          // Add Payment Entry if anything was paid
+          if (paid > 0) {
+            entries.push({
+              date: s.date || s.createdAt,
+              type: 'Payment',
+              amount: paid,
+              reference: s.invoiceNumber || s._id,
+              description: `Payment received for invoice ${s.invoiceNumber || ''}`
+            });
+          }
+        });
+
+        // Sort by date
+        entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+        ledgerData = entries;
 
         if (!customerInfo) {
-          customerInfo = { name: customerId, _id: customerId };
+          customerInfo = { 
+            name: customerId, 
+            _id: customerId,
+            totalPurchases,
+            totalPaid,
+            remainingBalance: totalPurchases - totalPaid
+          };
+        } else {
+          // Update customer info totals if they were derived
+          customerInfo.totalPurchases = totalPurchases;
+          customerInfo.totalPaid = totalPaid;
+          customerInfo.remainingBalance = (customerInfo.previousDue || 0) + totalPurchases - totalPaid;
         }
       }
 
@@ -90,18 +130,28 @@ const CustomerStatement = () => {
     fetchLedger();
   }, [fetchLedger]);
 
-  // Calculate running balance locally if not provided by backend
+  // Calculate running balance locally
   const ledgerWithBalance = useMemo(() => {
     if (!data || !data.ledger) return [];
     let currentBalance = data.customer?.previousDue || 0;
     
     return data.ledger.map(entry => {
-      if (entry.type === 'Debit' || entry.type === 'Invoice') {
-        currentBalance += entry.amount;
+      // Handle both backend ledger (debit/credit) and derived ledger (amount + type)
+      const isDebit = entry.transactionType === 'Sale' || entry.type === 'Invoice' || entry.debit > 0;
+      const amount = entry.amount || (isDebit ? entry.debit : entry.credit);
+
+      if (isDebit) {
+        currentBalance += amount;
       } else {
-        currentBalance -= entry.amount;
+        currentBalance -= amount;
       }
-      return { ...entry, runningBalance: currentBalance };
+      
+      return { 
+        ...entry, 
+        isDebit,
+        displayAmount: amount,
+        runningBalance: currentBalance 
+      };
     });
   }, [data]);
 
@@ -201,21 +251,21 @@ const CustomerStatement = () => {
 
               {ledgerWithBalance.length > 0 ? ledgerWithBalance.map((entry, index) => (
                 <TableRow key={index} hover>
-                  <TableCell>{new Date(entry.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(entry.transactionDate || entry.date).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {entry.invoiceId && <ReceiptIcon fontSize="small" color="action" />}
+                      {entry.isDebit ? <ReceiptIcon fontSize="small" color="action" /> : <FileDownloadIcon fontSize="small" color="success" />}
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {entry.reference || (entry.invoiceId ? `Invoice #${entry.invoiceId.toString().slice(-6)}` : 'Payment')}
+                        {entry.reference || 'Manual Entry'}
                       </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>{entry.description || '-'}</TableCell>
                   <TableCell align="right" sx={{ color: 'error.main' }}>
-                    {entry.type === 'Debit' || entry.type === 'Invoice' ? `Rs. ${entry.amount.toLocaleString()}` : '-'}
+                    {entry.isDebit ? `Rs. ${entry.displayAmount.toLocaleString()}` : '-'}
                   </TableCell>
                   <TableCell align="right" sx={{ color: 'success.main' }}>
-                    {entry.type === 'Credit' || entry.type === 'Payment' ? `Rs. ${entry.amount.toLocaleString()}` : '-'}
+                    {!entry.isDebit ? `Rs. ${entry.displayAmount.toLocaleString()}` : '-'}
                   </TableCell>
                   <TableCell align="right" sx={{ fontWeight: 700 }}>
                     Rs. {entry.runningBalance.toLocaleString()}
