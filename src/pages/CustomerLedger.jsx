@@ -28,42 +28,47 @@ const CustomerLedger = () => {
     setLoading(true);
     setError(null);
     try {
+      let formalCustomers = [];
       try {
         const res = await API.get('/customers');
-        setCustomers(Array.isArray(res.data) ? res.data : []);
+        formalCustomers = Array.isArray(res.data) ? res.data : [];
       } catch (e) {
-        // Fallback: If /customers returns 404, aggregate from /sales
-        if (e.response?.status === 404) {
-          console.log('Backend /customers not found, falling back to /sales aggregation');
-          const salesRes = await API.get('/sales');
-          const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
-          
-          const map = {};
-          allSales.forEach(s => {
-            const name = s.customerName || s.customer?.name || 'Unknown';
-            const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
-            const id = s.customerId?._id || s.customerId || name; // Use name as ID if no ID
+        if (e.response?.status !== 404) throw e;
+        console.log('Backend /customers not found');
+      }
 
-            if (!map[id]) {
-              map[id] = {
-                _id: id,
-                name,
-                contact,
-                totalPurchases: 0,
-                totalPaid: 0,
-                remainingBalance: 0
-              };
-            }
-            const net = Number(s.netAmount || s.totalAmount || 0);
-            const paid = Number(s.paidAmount || s.cashAmount || 0);
-            map[id].totalPurchases += net;
-            map[id].totalPaid += paid;
-            map[id].remainingBalance += (net - paid);
-          });
-          setCustomers(Object.values(map));
-        } else {
-          throw e; // Rethrow other errors
-        }
+      // If formal customers is empty, try to aggregate from sales
+      if (formalCustomers.length === 0) {
+        console.log('No formal customers found, aggregating from /sales');
+        const salesRes = await API.get('/sales');
+        const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
+        
+        const map = {};
+        allSales.forEach(s => {
+          const name = s.customerName || s.customer?.name || 'Unknown';
+          const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
+          const id = s.customerId?._id || s.customerId || name;
+
+          if (!map[id]) {
+            map[id] = {
+              _id: id,
+              name,
+              contact,
+              totalPurchases: 0,
+              totalPaid: 0,
+              remainingBalance: 0,
+              isDerived: true
+            };
+          }
+          const net = Number(s.netAmount || s.totalAmount || 0);
+          const paid = Number(s.paidAmount || s.cashAmount || 0);
+          map[id].totalPurchases += net;
+          map[id].totalPaid += paid;
+          map[id].remainingBalance += (net - paid);
+        });
+        setCustomers(Object.values(map));
+      } else {
+        setCustomers(formalCustomers);
       }
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch customers');
