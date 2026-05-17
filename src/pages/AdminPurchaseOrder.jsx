@@ -67,6 +67,7 @@ const INITIAL_FORM = {
   orderStatus: 'Pending',
   paymentStatus: 'Unpaid',
   reference: '',
+  vendorId: '',
   vendorName: '',
   vendorAddress: '',
   vendorPhone: '',
@@ -926,6 +927,7 @@ const AdminPurchaseOrder = () => {
       if (selectedVendor) {
         setForm({
           ...form,
+          vendorId: selectedVendor._id,
           vendorName: selectedVendor.vendorName,
           vendorAddress: selectedVendor.address?.street || '',
           vendorPhone: selectedVendor.phone || '',
@@ -1088,6 +1090,11 @@ const AdminPurchaseOrder = () => {
 
     if (!form.poNumber || !form.vendorName || !sanitizedItems.length) {
       setError('PO Number, Vendor Name, and at least one valid item are required.');
+      return;
+    }
+
+    if (sanitizedItems.some(item => item.quantityOrdered <= 0)) {
+      setError('All items must have a quantity greater than 0.');
       return;
     }
 
