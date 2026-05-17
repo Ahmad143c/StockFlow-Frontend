@@ -6,7 +6,7 @@ import {
   // Dialog imports
   Dialog, DialogTitle, DialogContent, DialogActions,
   InputAdornment, CircularProgress, Stack, Alert,
-  Chip
+  Chip, Autocomplete
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -819,6 +819,7 @@ const AdminPurchaseOrder = () => {
 
   const [form, setForm] = useState(INITIAL_FORM);
   const [vendors, setVendors] = useState([]);
+  const [pastContacts, setPastContacts] = useState([]);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
@@ -833,6 +834,23 @@ const AdminPurchaseOrder = () => {
     API.get('/vendors', { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => setVendors(res.data))
       .catch(() => setVendors([]));
+
+    API.get('/purchase-orders', { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        const uniqueContactsMap = new Map();
+        res.data.forEach(po => {
+          if (po.shipToName && !uniqueContactsMap.has(po.shipToName)) {
+            uniqueContactsMap.set(po.shipToName, {
+              shipToName: po.shipToName,
+              shipToPhone: po.shipToPhone || '',
+              shipToEmail: po.shipToEmail || '',
+              shipToAddress: po.shipToAddress || '',
+            });
+          }
+        });
+        setPastContacts(Array.from(uniqueContactsMap.values()));
+      })
+      .catch((err) => console.error('Failed to load past contacts', err));
   }, []);
 
   useEffect(() => {
@@ -1493,7 +1511,31 @@ const AdminPurchaseOrder = () => {
                 {renderSectionHeader('Ship To')}
 
                 <Grid item xs={12} sm={6} md={4}>
-                  <TextField label="Contact Person Name" name="shipToName" value={form.shipToName} onChange={handleChange} fullWidth required />
+                  <Autocomplete
+                    freeSolo
+                    options={pastContacts}
+                    getOptionLabel={(option) => typeof option === 'string' ? option : option.shipToName}
+                    value={form.shipToName}
+                    onChange={(event, newValue) => {
+                      if (typeof newValue === 'object' && newValue !== null) {
+                        setForm(prev => ({
+                          ...prev,
+                          shipToName: newValue.shipToName,
+                          shipToPhone: newValue.shipToPhone,
+                          shipToEmail: newValue.shipToEmail,
+                          shipToAddress: newValue.shipToAddress,
+                        }));
+                      } else {
+                        setForm(prev => ({ ...prev, shipToName: newValue || '' }));
+                      }
+                    }}
+                    onInputChange={(event, newInputValue) => {
+                      setForm(prev => ({ ...prev, shipToName: newInputValue }));
+                    }}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Contact Person Name" name="shipToName" fullWidth required />
+                    )}
+                  />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
                   <TextField label="Contact Number" name="shipToPhone" value={form.shipToPhone} onChange={handleChange} fullWidth required />

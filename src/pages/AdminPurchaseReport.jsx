@@ -56,6 +56,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloseIcon from '@mui/icons-material/Close';
 
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import API from '../api/api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -352,7 +353,7 @@ const generatePDF = (order) => {
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
-        const descStartY = currentY + (rowHeight - descLines.length * 4) / 2 + 2;
+        const descStartY = currentY + (rowHeight - descLines.length * 3) / 2 + 2;
         doc.text(descLines, 50, descStartY);
 
         const brandText = item.brand || item.vendor || item.company || 'N/A';
@@ -477,6 +478,49 @@ const generatePDF = (order) => {
   }
 
   doc.save(`PO_${order.poNumber || 'order'}_${new Date().toISOString().slice(0, 10)}.pdf`);
+};
+
+const generatePOListPDF = (orders, startDate, endDate) => {
+  const doc = new jsPDF('landscape');
+  
+  // Header
+  doc.setFontSize(18);
+  doc.setTextColor(15, 37, 110);
+  doc.text('Purchase Orders Report', 14, 22);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  const dateText = `Period: ${startDate || 'All time'} to ${endDate || 'Present'}`;
+  doc.text(dateText, 14, 30);
+  
+  // Generate Table
+  const tableData = orders.map((o, index) => {
+    const items = o.items || [];
+    const itemsCount = items.length;
+    const totalQty = items.reduce((sum, i) => sum + (Number(i.quantityOrdered) || 0), 0);
+    return [
+      index + 1,
+      o.poNumber || '-',
+      o.poDate ? new Date(o.poDate).toLocaleDateString() : '-',
+      o.vendorName || '-',
+      itemsCount,
+      totalQty,
+      `Rs. ${Number(o.grandTotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      o.paymentStatus || 'Unpaid',
+      o.orderStatus || 'Pending'
+    ];
+  });
+  
+  doc.autoTable({
+    startY: 35,
+    head: [['S/N', 'PO Number', 'Date', 'Vendor', 'Items', 'Total Qty', 'Grand Total', 'Payment Status', 'Order Status']],
+    body: tableData,
+    theme: 'striped',
+    headStyles: { fillColor: [15, 37, 110] },
+    styles: { fontSize: 8 },
+  });
+  
+  doc.save(`PO_Report_List_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
 // ─── AddProductDialog Component ───────────────────────────────────────────────
@@ -2900,21 +2944,16 @@ const AdminPurchaseReport = () => {
               Print Report
             </Button>
 
-            <Tooltip title="Preview PDF">
+            <Tooltip title="Generate PDF Report">
               <IconButton
-                onClick={() => {
-                  // Generate and preview PDF
-                  const pdfData = generatePDF(filteredOrders);
-                  // For preview, we can open in new tab or show in dialog
-                  // Since jsPDF generates blob, we can create object URL
-                  const pdfBlob = pdfData.output('blob');
-                  const pdfUrl = URL.createObjectURL(pdfBlob);
-                  window.open(pdfUrl, '_blank');
-                }}
+                onClick={() => generatePOListPDF(filteredOrders, startDate, endDate)}
                 sx={{
                   color: darkMode ? '#90caf9' : '#1976d2',
+                  backgroundColor: darkMode ? 'rgba(144,202,249,0.1)' : 'rgba(25,118,210,0.1)',
+                  ml: { xs: 0, sm: 2 },
+                  mt: { xs: 1, sm: 0 },
                   '&:hover': {
-                    backgroundColor: darkMode ? 'rgba(144,202,249,0.1)' : 'rgba(25,118,210,0.1)',
+                    backgroundColor: darkMode ? 'rgba(144,202,249,0.2)' : 'rgba(25,118,210,0.2)',
                   },
                 }}
               >

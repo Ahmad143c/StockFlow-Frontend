@@ -193,7 +193,8 @@ const AdminSalesReport = () => {
         (sale.cashierName || '').toLowerCase().includes(q) ||
         (sale.customerName || '').toLowerCase().includes(q) ||
         String(sale.invoiceNumber || '').toLowerCase().includes(q) ||
-        (sale._id || '').toLowerCase().includes(q)
+        (sale._id || '').toLowerCase().includes(q) ||
+        (sale.paymentStatus || '').toLowerCase().includes(q)
       );
       const matchesStatus = !status || sale.paymentStatus === status;
       const created = new Date(sale.createdAt);
@@ -547,7 +548,7 @@ const AdminSalesReport = () => {
 
           {/* Search Field */}
           <TextField
-            placeholder="Search Product/Seller/Cashier/Customer/Invoice..."
+            placeholder="Search Product/Seller/Cashier/Customer/Invoice/Status..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             fullWidth
