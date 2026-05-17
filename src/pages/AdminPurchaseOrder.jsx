@@ -1285,43 +1285,6 @@ const AdminPurchaseOrder = () => {
               )}
 
               <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ width: '100%' }}>
-
-                {/* ── PO Details ── */}
-                {renderSectionHeader('PO Details')}
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <TextField label="PO Number" name="poNumber" value={form.poNumber} onChange={handleChange} fullWidth placeholder="Auto or manual" />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Payment Status</InputLabel>
-                    <Select name="paymentStatus" value={form.paymentStatus} label="Payment Status" onChange={handleChange}>
-                      <MenuItem value="Unpaid">Unpaid</MenuItem>
-                      <MenuItem value="Partially Paid">Partially Paid</MenuItem>
-                      <MenuItem value="Paid">Paid</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <TextField label="PO Date" name="poDate" value={form.poDate} onChange={handleChange} type="date" fullWidth InputLabelProps={{ shrink: true }} required />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <TextField label="Expected Delivery Date" name="expectedDeliveryDate" value={form.expectedDeliveryDate} onChange={handleChange} type="date" fullWidth InputLabelProps={{ shrink: true }} />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Order Status</InputLabel>
-                    <Select name="orderStatus" value={form.orderStatus} label="Order Status" onChange={handleChange}>
-                      {DEFAULT_STATUS.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField label="Reference/Notes" name="reference" value={form.reference} onChange={handleChange} fullWidth multiline rows={2} placeholder="Optional notes for this PO" />
-                </Grid>
-
-                <Divider sx={{ my: 1.5, width: '100%' }} />
-
                 {/* ── Vendor ── */}
                 {renderSectionHeader('Vendor')}
 
@@ -1346,33 +1309,6 @@ const AdminPurchaseOrder = () => {
                 </Grid>
 
                 <Divider sx={{ my: 1.5, width: '100%' }} />
-
-                {/* ── Ship To ── */}
-                {renderSectionHeader('Ship To')}
-
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField label="Contact Person Name" name="shipToName" value={form.shipToName} onChange={handleChange} fullWidth required />
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField label="Contact Number" name="shipToPhone" value={form.shipToPhone} onChange={handleChange} fullWidth required />
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <TextField label="Email" name="shipToEmail" type="email" value={form.shipToEmail} onChange={handleChange} fullWidth required />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField label="Shipping Address" name="shipToAddress" value={form.shipToAddress} onChange={handleChange} fullWidth multiline rows={2} required />
-                </Grid>
-
-                <Divider sx={{ my: 1.5, width: '100%' }} />
-
-                {/* ── Line Items ── */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }} mb={1}>Items</Typography>
-                  {form.vendorName
-                    ? <Typography variant="body2" color="info.main" mb={1}>Showing {filteredProducts.length} product(s) from vendor: {form.vendorName}</Typography>
-                    : <Typography variant="body2" color="warning.main" mb={1}>Please select a vendor first to see available products</Typography>
-                  }
-                </Grid>
 
                 {form.items.map((item, idx) => (
                   <Grid item xs={12} key={idx}>
@@ -1553,6 +1489,33 @@ const AdminPurchaseOrder = () => {
 
                 <Divider sx={{ my: 1.5, width: '100%' }} />
 
+                {/* ── Ship To ── */}
+                {renderSectionHeader('Ship To')}
+
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField label="Contact Person Name" name="shipToName" value={form.shipToName} onChange={handleChange} fullWidth required />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField label="Contact Number" name="shipToPhone" value={form.shipToPhone} onChange={handleChange} fullWidth required />
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <TextField label="Email" name="shipToEmail" type="email" value={form.shipToEmail} onChange={handleChange} fullWidth required />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField label="Shipping Address" name="shipToAddress" value={form.shipToAddress} onChange={handleChange} fullWidth multiline rows={2} required />
+                </Grid>
+
+                <Divider sx={{ my: 1.5, width: '100%' }} />
+
+                {/* ── Line Items ── */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }} mb={1}>Items</Typography>
+                  {form.vendorName
+                    ? <Typography variant="body2" color="info.main" mb={1}>Showing {filteredProducts.length} product(s) from vendor: {form.vendorName}</Typography>
+                    : <Typography variant="body2" color="warning.main" mb={1}>Please select a vendor first to see available products</Typography>
+                  }
+                </Grid>
+
                 {/* ── Totals ── */}
                 {renderSectionHeader('Totals')}
 
@@ -1698,6 +1661,42 @@ const AdminPurchaseOrder = () => {
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <TextField label="Delivery Location/Warehouse" name="deliveryLocation" value={form.deliveryLocation} onChange={handleChange} fullWidth />
+                </Grid>
+
+                <Divider sx={{ my: 1.5, width: '100%' }} />
+
+                {/* ── PO Details ── */}
+                {renderSectionHeader('PO Details')}
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <TextField label="PO Number" name="poNumber" value={form.poNumber} onChange={handleChange} fullWidth placeholder="Auto or manual" />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth>
+                    <InputLabel>Payment Status</InputLabel>
+                    <Select name="paymentStatus" value={form.paymentStatus} label="Payment Status" onChange={handleChange}>
+                      <MenuItem value="Unpaid">Unpaid</MenuItem>
+                      <MenuItem value="Partially Paid">Partially Paid</MenuItem>
+                      <MenuItem value="Paid">Paid</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <TextField label="PO Date" name="poDate" value={form.poDate} onChange={handleChange} type="date" fullWidth InputLabelProps={{ shrink: true }} required />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <TextField label="Expected Delivery Date" name="expectedDeliveryDate" value={form.expectedDeliveryDate} onChange={handleChange} type="date" fullWidth InputLabelProps={{ shrink: true }} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth>
+                    <InputLabel>Order Status</InputLabel>
+                    <Select name="orderStatus" value={form.orderStatus} label="Order Status" onChange={handleChange}>
+                      {DEFAULT_STATUS.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField label="Reference/Notes" name="reference" value={form.reference} onChange={handleChange} fullWidth multiline rows={2} placeholder="Optional notes for this PO" />
                 </Grid>
 
                 <Divider sx={{ my: 1.5, width: '100%' }} />
