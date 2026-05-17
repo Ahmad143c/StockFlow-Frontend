@@ -37,39 +37,51 @@ const CustomerLedger = () => {
         console.log('Backend /customers not found');
       }
 
-      // If formal customers is empty, try to aggregate from sales
-      if (formalCustomers.length === 0) {
-        console.log('No formal customers found, aggregating from /sales');
-        const salesRes = await API.get('/sales');
-        const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
-        
-        const map = {};
-        allSales.forEach(s => {
-          const name = s.customerName || s.customer?.name || 'Unknown';
-          const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
-          const id = s.customerId?._id || s.customerId || name;
+      const salesRes = await API.get('/sales').catch(() => ({ data: [] }));
+      const allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
+      
+      const map = {};
 
-          if (!map[id]) {
-            map[id] = {
-              _id: id,
-              name,
-              contact,
-              totalPurchases: 0,
-              totalPaid: 0,
-              remainingBalance: 0,
-              isDerived: true
-            };
-          }
+      // 1. Map all registered (formal) customers
+      formalCustomers.forEach(c => {
+        map[c.name.toLowerCase()] = {
+          ...c,
+          remainingBalance: c.currentBalance !== undefined ? c.currentBalance : (c.remainingBalance || 0),
+          isDerived: false
+        };
+      });
+
+      // 2. Aggregate sales for unregistered (derived) customers
+      allSales.forEach(s => {
+        const name = s.customerName || s.customer?.name || 'Unknown';
+        const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
+        const lowerName = name.toLowerCase();
+
+        // If not already in our map (meaning they aren't registered yet)
+        if (!map[lowerName]) {
+          map[lowerName] = {
+            _id: name, // fallback ID for derived
+            name,
+            contact,
+            totalPurchases: 0,
+            totalPaid: 0,
+            remainingBalance: 0,
+            isDerived: true
+          };
+        }
+
+        // Only add up amounts if this is a purely derived customer. 
+        // Formal customers already have their precise totals managed by the backend Ledger.
+        if (map[lowerName].isDerived) {
           const net = Number(s.netAmount || s.totalAmount || 0);
           const paid = Number(s.paidAmount || s.cashAmount || 0);
-          map[id].totalPurchases += net;
-          map[id].totalPaid += paid;
-          map[id].remainingBalance += (net - paid);
-        });
-        setCustomers(Object.values(map));
-      } else {
-        setCustomers(formalCustomers);
-      }
+          map[lowerName].totalPurchases += net;
+          map[lowerName].totalPaid += paid;
+          map[lowerName].remainingBalance += (net - paid);
+        }
+      });
+
+      setCustomers(Object.values(map));
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch customers');
     } finally {
