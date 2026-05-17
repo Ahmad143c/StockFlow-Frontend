@@ -11,6 +11,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PrintIcon from '@mui/icons-material/Print';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import AddPaymentModal from '../components/AddPaymentModal';
 
 const CustomerStatement = () => {
   const { customerId } = useParams();
@@ -19,6 +20,7 @@ const CustomerStatement = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const fetchLedger = useCallback(async () => {
     setLoading(true);
@@ -155,6 +157,34 @@ const CustomerStatement = () => {
     });
   }, [data]);
 
+  const handleExportCSV = () => {
+    if (!ledgerWithBalance || ledgerWithBalance.length === 0) return;
+    
+    const headers = ['Date', 'Reference', 'Description', 'Debit (+)', 'Credit (-)', 'Running Balance'];
+    const csvContent = [
+      headers.join(','),
+      `Opening Balance,,,,"Rs. ${data.customer?.previousDue || 0}"`,
+      ...ledgerWithBalance.map(entry => {
+        const date = new Date(entry.transactionDate || entry.date).toLocaleDateString();
+        const ref = `"${entry.reference || 'Manual Entry'}"`;
+        const desc = `"${entry.description || '-'}"`;
+        const debit = entry.isDebit ? entry.displayAmount : '';
+        const credit = !entry.isDebit ? entry.displayAmount : '';
+        const balance = entry.runningBalance;
+        return [date, ref, desc, debit, credit, balance].join(',');
+      })
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${data.customer?.name || 'Customer'}_statement.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}><CircularProgress /></Box>;
   if (error) return <Box sx={{ p: 3 }}><Alert severity="error">{error}</Alert><Button onClick={() => navigate(-1)} startIcon={<ArrowBackIcon />} sx={{ mt: 2 }}>Go Back</Button></Box>;
   if (!data) return null;
@@ -180,8 +210,8 @@ const CustomerStatement = () => {
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" startIcon={<PrintIcon />}>Print Statement</Button>
-          <Button variant="outlined" startIcon={<FileDownloadIcon />}>Export CSV</Button>
+          <Button variant="outlined" startIcon={<PrintIcon />} onClick={() => window.print()}>Print Statement</Button>
+          <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={handleExportCSV}>Export CSV</Button>
         </Box>
       </Box>
 
@@ -216,8 +246,8 @@ const CustomerStatement = () => {
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>Quick Actions</Typography>
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              <Button fullWidth variant="contained" color="success">Record New Payment</Button>
-              <Button fullWidth variant="outlined" color="primary">Create New Invoice</Button>
+              <Button fullWidth variant="contained" color="success" onClick={() => setPaymentModalOpen(true)}>Record New Payment</Button>
+              <Button fullWidth variant="outlined" color="primary" onClick={() => navigate('../../admin/sales')}>Create New Invoice</Button>
             </Box>
           </Paper>
         </Grid>
@@ -282,6 +312,18 @@ const CustomerStatement = () => {
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* Payment Modal */}
+      {paymentModalOpen && (
+        <AddPaymentModal 
+          open={paymentModalOpen} 
+          onClose={() => {
+            setPaymentModalOpen(false);
+            fetchLedger();
+          }} 
+          customer={customer}
+        />
+      )}
     </Box>
   );
 };
