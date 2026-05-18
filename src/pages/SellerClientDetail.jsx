@@ -37,6 +37,7 @@ import { useDarkMode } from '../context/DarkModeContext';
 import { useSelector } from 'react-redux';
 import API from '../api/api';
 import PrintIcon from '@mui/icons-material/Print';
+import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 import EmailIcon from '@mui/icons-material/Email';
@@ -441,6 +442,29 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
     setRefundInvoices([]);
     fetchCustomers();
   }, [fetchCustomers]);
+
+  const handleDeleteCustomer = async () => {
+    if (!selectedCustomer) return;
+    const confirmDelete = window.confirm(`Are you absolutely sure you want to delete customer "${selectedCustomer.name}" and ALL related data (invoices, payments, ledgers)? This action cannot be undone.`);
+    if (!confirmDelete) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const nameEnc = encodeURIComponent(selectedCustomer.name);
+      const contactEnc = selectedCustomer.contact ? encodeURIComponent(selectedCustomer.contact) : '';
+      await API.delete(`/customers/delete-client?name=${nameEnc}&contact=${contactEnc}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert('Customer and all related data deleted successfully!');
+      setSelectedCustomer(null);
+      setInvoices([]);
+      setRefundInvoices([]);
+      fetchCustomers();
+    } catch (e) {
+      console.error('Delete error:', e);
+      alert(e.response?.data?.message || e.message || 'Failed to delete customer');
+    }
+  };
 
   // Calculate monthly and yearly totals
   const monthlyTotals = useMemo(() => {
@@ -1812,6 +1836,27 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                       >
                         Print
                       </Button>
+                      {selectedCustomer && (
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="error"
+                          startIcon={<DeleteIcon />}
+                          onClick={handleDeleteCustomer}
+                          sx={{
+                            textTransform: 'none',
+                            borderRadius: 2,
+                            fontWeight: 500,
+                            boxShadow: '0 2px 8px rgba(211, 47, 47, 0.3)',
+                            '&:hover': { boxShadow: '0 4px 12px rgba(211, 47, 47, 0.4)' },
+                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            px: { xs: 1, sm: 2 },
+                            width: { xs: '100%', sm: 'auto' },
+                          }}
+                        >
+                          Delete Customer
+                        </Button>
+                      )}
                     </Box>
                   </Grid>
                 </Grid>
