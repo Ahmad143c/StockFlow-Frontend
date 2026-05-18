@@ -121,6 +121,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [refundInvoices, setRefundInvoices] = useState([]);
+  const [ledger, setLedger] = useState([]);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [invoiceDetail, setInvoiceDetail] = useState(null);
   const [printPreviewHtml, setPrintPreviewHtml] = useState('');
@@ -187,6 +188,16 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const allSales = Array.isArray(res.data) ? res.data : [];
+        // Fetch registered customers
+        const regRes = await API.get('/customers', {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: [] }));
+        const registeredList = Array.isArray(regRes.data) ? regRes.data : [];
+        const regMap = {};
+        registeredList.forEach(rc => {
+          regMap[rc.name.toLowerCase()] = rc._id;
+        });
+
         // Ensure we only include sales that belong to the specified seller (defensive filter)
         const sales = allSales.filter(s => String(s.sellerId?._id || s.sellerId) === String(sellerId));
         const map = {};
@@ -195,12 +206,17 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
           const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
           const email = s.customerEmail || s.customer?.email || s.customerEmailAddress || s.customer_email || '';
           if (!map[name]) {
+            const lowerName = name.toLowerCase();
+            const resolvedId = regMap[lowerName] || s.customerId?._id || s.customerId || null;
             map[name] = {
+              _id: resolvedId,
               name,
               contact,
               email,
               invoices: [],
             };
+          } else if (!map[name]._id && s.customerId) {
+            map[name]._id = s.customerId?._id || s.customerId;
           }
           map[name].invoices.push(s);
         });
@@ -332,10 +348,39 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
   const openCustomer = useCallback(
     async (cust) => {
       setSelectedCustomer(cust);
-      // Clear invoice search when opening a customer
       setInvoiceQuery('');
-      // Fetch invoices for this specific customer (date filters will be applied by fetchInvoices)
+      setLedger([]);
+      
       await fetchInvoices(cust.name, cust.contact, null);
+
+      const token = localStorage.getItem('token');
+      let finalId = cust._id;
+
+      if (!finalId) {
+        try {
+          const regRes = await API.get('/customers', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const match = regRes.data.find(c => c.name.toLowerCase() === cust.name.toLowerCase());
+          if (match) {
+            finalId = match._id;
+          }
+        } catch (e) {
+          console.error("Error matching registered customer", e);
+        }
+      }
+
+      if (finalId && /^[0-9a-fA-F]{24}$/.test(String(finalId))) {
+        try {
+          const res = await API.get(`/customers/ledger/${finalId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setLedger(Array.isArray(res.data) ? res.data : []);
+        } catch (e) {
+          console.error("Failed to fetch customer ledger:", e);
+          setLedger([]);
+        }
+      }
     },
     [fetchInvoices]
   );
@@ -2254,6 +2299,89 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                         <Button onClick={() => setInvoiceDialogOpen(false)}>Close</Button>
                       </DialogActions>
                     </Dialog>
+
+                    {/* Customer Ledger & Payments Section */}
+                    {selectedCustomer && ledger.length > 0 && (
+                      <Box sx={{ mt: 3, mb: 3 }}>
+                        <Box
+                          sx={{
+                            p: 2,
+                            borderBottom: `2px solid ${darkMode ? '#333' : '#e0e0e0'}`,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Typography variant="h6" sx={{ color: darkMode ? '#fff' : '#333', fontWeight: 600 }}>
+                            Customer Ledger & Payments - {selectedCustomer.name}
+                          </Typography>
+                        </Box>
+                        <TableContainer
+                          component={Paper}
+                          sx={{
+                            width: '100%',
+                            maxWidth: {
+                              xs: 'calc(85vw - 10px)',
+                              sm: '100%',
+                              md: 'calc(103vw - 300px)'
+                            },
+                            minWidth: 0,
+                            overflowX: 'auto',
+                            WebkitOverflowScrolling: 'touch',
+                            borderRadius: 2,
+                            backgroundColor: darkMode ? '#2a2a2a' : '#fff',
+                            border: `1px solid ${darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'}`,
+                          }}
+                        >
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ bgcolor: darkMode ? '#2a2a2a' : '#f5f5f5' }}>
+                                <TableCell sx={{ fontWeight: 'bold', color: darkMode ? '#fff' : '#333', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Date</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', color: darkMode ? '#fff' : '#333', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Type</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', color: darkMode ? '#fff' : '#333', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Description</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 'bold', color: darkMode ? '#fff' : '#333', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Debit (+)</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 'bold', color: darkMode ? '#fff' : '#333', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Credit (-)</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 'bold', color: darkMode ? '#fff' : '#333', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>Running Balance</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {ledger.map((entry, idx) => (
+                                <TableRow
+                                  key={entry._id || idx}
+                                  sx={{
+                                    '&:hover': { backgroundColor: darkMode ? '#333' : '#f9f9f9', transition: 'background-color 0.2s ease' },
+                                    backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+                                    borderBottom: `1px solid ${darkMode ? '#333' : '#e0e0e0'}`,
+                                  }}
+                                >
+                                  <TableCell sx={{ color: darkMode ? '#fff' : '#333', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                                    {new Date(entry.transactionDate || entry.createdAt).toLocaleDateString()}
+                                  </TableCell>
+                                  <TableCell sx={{ color: darkMode ? '#fff' : '#333', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                                    <Chip
+                                      label={entry.transactionType}
+                                      size="small"
+                                      color={entry.transactionType === 'Sale' ? 'primary' : entry.transactionType === 'Payment' ? 'success' : 'default'}
+                                      sx={{ height: 22, fontSize: '0.7rem' }}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ color: darkMode ? '#fff' : '#333', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>{entry.description || '-'}</TableCell>
+                                  <TableCell align="right" sx={{ color: '#d32f2f', fontWeight: 500, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                                    {entry.debit > 0 ? `Rs. ${Number(entry.debit).toLocaleString()}` : '-'}
+                                  </TableCell>
+                                  <TableCell align="right" sx={{ color: '#388e3c', fontWeight: 500, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                                    {entry.credit > 0 ? `Rs. ${Number(entry.credit).toLocaleString()}` : '-'}
+                                  </TableCell>
+                                  <TableCell align="right" sx={{ color: darkMode ? '#fff' : '#333', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                                    Rs. {Number(entry.runningBalance).toLocaleString()}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    )}
 
                     {/* Refund Invoices Section */}
                     {refundInvoices.length > 0 && (
