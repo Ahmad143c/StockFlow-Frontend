@@ -1593,9 +1593,7 @@ const SellerSaleEntry = () => {
                           <Chip label="✉ Sent" size="small" sx={{ height: 22, bgcolor: darkMode ? '#388e3c' : '#4caf50', color: 'white' }} />
                         )}
                         {s.emailStatus === 'failed' && (
-                          <Tooltip title={s.emailError || "Email failed to send"} arrow>
-                            <Chip label="✉ Failed" size="small" sx={{ height: 22, bgcolor: darkMode ? '#d32f2f' : '#f44336', color: 'white' }} />
-                          </Tooltip>
+                          <Chip label="✉ Failed" size="small" sx={{ height: 22, bgcolor: darkMode ? '#d32f2f' : '#f44336', color: 'white' }} />
                         )}
                         {s.emailStatus === 'pending' && (
                           <Chip label="⧐ Email Pending" size="small" sx={{ height: 22, bgcolor: darkMode ? '#616161' : '#9e9e9e', color: 'white' }} />
