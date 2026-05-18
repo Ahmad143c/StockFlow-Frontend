@@ -31,31 +31,16 @@ const AddPaymentModal = ({ open, onClose, customer }) => {
     setLoading(true);
     setError(null);
     try {
-      let actualCustomerId = customer._id;
-      const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(actualCustomerId));
-
       // If customer is derived from sales but has no real ID in the Customer collection
-      // we need to create it first.
-      if (!isObjectId || customer.isDerived) {
-        const custRes = await API.post('/customers', {
-          name: customer.name || actualCustomerId,
-          contact: customer.contact || 'N/A',
-          email: '',
-          address: '',
-          previousDue: customer.remainingBalance || 0,
-          currentBalance: customer.remainingBalance || 0
-        });
-        actualCustomerId = custRes.data._id;
-      }
-
+      // we might need to create it first, but for now we'll try to send the request.
       await API.post('/customers/payment', {
-        customerId: actualCustomerId,
+        customerId: customer._id,
         ...formData,
         amount: Number(formData.amount)
       });
       onClose();
     } catch (e) {
-      setError(e.response?.data?.message || 'Failed to record payment. Please try again.');
+      setError(e.response?.data?.message || 'Failed to record payment. Note: Only registered customers can receive payments.');
     } finally {
       setLoading(false);
     }
