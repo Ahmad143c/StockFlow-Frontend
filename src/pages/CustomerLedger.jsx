@@ -46,12 +46,14 @@ const CustomerLedger = () => {
       formalCustomers.forEach(c => {
         map[c.name.toLowerCase()] = {
           ...c,
-          remainingBalance: c.currentBalance !== undefined ? c.currentBalance : (c.remainingBalance || 0),
+          totalPurchases: Number(c.totalPurchases || 0),
+          totalPaid: Number(c.totalPaid || 0),
+          remainingBalance: Number(c.currentBalance !== undefined ? c.currentBalance : (c.remainingBalance || 0)),
           isDerived: false
         };
       });
 
-      // 2. Aggregate sales for unregistered (derived) customers
+      // 2. Aggregate sales for both formal and derived customers
       allSales.forEach(s => {
         const name = s.customerName || s.customer?.name || 'Unknown';
         const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
@@ -70,14 +72,24 @@ const CustomerLedger = () => {
           };
         }
 
-        // Only add up amounts if this is a purely derived customer. 
-        // Formal customers already have their precise totals managed by the backend Ledger.
+        const net = Number(s.netAmount || s.totalAmount || 0);
+        const paid = Number(s.paidAmount || s.cashAmount || 0);
+        const due = net - paid;
+
+        // For derived customers, aggregate all sales
         if (map[lowerName].isDerived) {
-          const net = Number(s.netAmount || s.totalAmount || 0);
-          const paid = Number(s.paidAmount || s.cashAmount || 0);
           map[lowerName].totalPurchases += net;
           map[lowerName].totalPaid += paid;
-          map[lowerName].remainingBalance += (net - paid);
+          map[lowerName].remainingBalance += due;
+        } else {
+          // For formal customers, ONLY add unlinked sales matching their name
+          // (because linked sales are already counted in c.currentBalance, c.totalPurchases, and c.totalPaid).
+          const linkedId = s.customerId && (typeof s.customerId === 'object' ? s.customerId._id : s.customerId);
+          if (!linkedId) {
+            map[lowerName].totalPurchases += net;
+            map[lowerName].totalPaid += paid;
+            map[lowerName].remainingBalance += due;
+          }
         }
       });
 
