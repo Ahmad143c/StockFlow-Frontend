@@ -48,6 +48,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import Tooltip from '@mui/material/Tooltip';
+import AddPaymentModal from '../components/AddPaymentModal';
 import { generateInvoiceHTML as utilGenerateInvoiceHTML } from '../utils/invoiceUtils';
 
 const SellerClientDetail = ({ sellerId: propSellerId }) => {
@@ -127,6 +128,8 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
   const [printPreviewHtml, setPrintPreviewHtml] = useState('');
   const [invoicePage, setInvoicePage] = useState(0);
   const [refundPage, setRefundPage] = useState(0);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   // Reset pagination when filters change
   useEffect(() => { setInvoicePage(0); setRefundPage(0); }, [invoiceQuery, startDate, endDate, paymentStatusFilter, selectedCustomer]);
@@ -2120,7 +2123,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                             <TableCell align="center" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Warranty</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Paid Amount</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Remaining Amount</TableCell>
-
+                            <TableCell align="center" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Action</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -2253,6 +2256,29 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                                 </TableCell>
                                 <TableCell align="right" sx={cellSx}>{(() => { const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0; const actualPaid = Number(inv.netAmount || inv.totalAmount || 0) - refundTotal; return `Rs. ${actualPaid.toLocaleString()}`; })()}</TableCell>
                                 <TableCell align="right" sx={cellSx}>{(() => { const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0; const remaining = Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - refundTotal - Number(inv.paidAmount || 0)); return `Rs. ${remaining.toLocaleString()}`; })()}</TableCell>
+                                <TableCell align="center" sx={cellSx}>
+                                  {(() => {
+                                    const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0;
+                                    const remaining = Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - refundTotal - Number(inv.paidAmount || 0));
+                                    return remaining > 0 ? (
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        color="success"
+                                        sx={{ textTransform: 'none', fontSize: '0.75rem', px: 1, py: 0.5 }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedInvoice(inv);
+                                          setPaymentModalOpen(true);
+                                        }}
+                                      >
+                                        Pay Now
+                                      </Button>
+                                    ) : (
+                                      <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 600 }}>Settled</Typography>
+                                    );
+                                  })()}
+                                </TableCell>
                               </TableRow>
                             );
                           })}
@@ -2287,6 +2313,90 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                         Total Invoices: <strong>{invoices.length}</strong> | Total Amount:{' '}
                         <strong>Rs. {totalRevenue.toLocaleString()}</strong>
                       </Typography>
+                    </Box>
+
+                    {/* Invoice Summary Subsection */}
+                    <Box sx={{ mt: 4, pt: 3, borderTop: `2px solid ${darkMode ? '#333' : '#e0e0e0'}` }}>
+                      <Typography variant="h6" sx={{ color: darkMode ? '#fff' : '#333', fontWeight: 600, mb: 2, textAlign: 'left' }}>
+                        Invoice Summary
+                      </Typography>
+                      
+                      <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={12} sm={4}>
+                          <Paper elevation={1} sx={{ p: 2, borderRadius: 2, textAlign: 'center', bgcolor: darkMode ? '#1a237e' : '#e8eaf6' }}>
+                            <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 500 }}>Total Invoiced</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
+                              Rs. {(invoices.reduce((sum, inv) => sum + Number(inv.netAmount || inv.totalAmount || 0), 0)).toLocaleString()}
+                            </Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                          <Paper elevation={1} sx={{ p: 2, borderRadius: 2, textAlign: 'center', bgcolor: darkMode ? '#1b5e20' : '#e8f5e9' }}>
+                            <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 500 }}>Total Collected</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5, color: 'success.main' }}>
+                              Rs. {(invoices.reduce((sum, inv) => sum + Number(inv.paidAmount || 0), 0)).toLocaleString()}
+                            </Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                          <Paper elevation={1} sx={{ p: 2, borderRadius: 2, textAlign: 'center', bgcolor: darkMode ? '#b71c1c' : '#ffebee' }}>
+                            <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 500 }}>Outstanding</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5, color: 'error.main' }}>
+                              Rs. {Math.max(0, invoices.reduce((sum, inv) => sum + Number(inv.netAmount || inv.totalAmount || 0), 0) - invoices.reduce((sum, inv) => sum + Number(inv.paidAmount || 0), 0)).toLocaleString()}
+                            </Typography>
+                          </Paper>
+                        </Grid>
+                      </Grid>
+
+                      {/* MiniLedger table */}
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: darkMode ? '#aaa' : '#666', textAlign: 'left' }}>
+                        Last 10 Transactions
+                      </Typography>
+                      <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow sx={{ bgcolor: darkMode ? '#333' : '#f5f5f5' }}>
+                              <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }}>Invoice #</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }} align="right">Amount</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }} align="right">Paid</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }} align="center">Status</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {[...invoices]
+                              .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+                              .slice(0, 10)
+                              .map((inv, idx) => {
+                                const shortNum = inv.invoiceNumber || inv._id?.toString().slice(-6);
+                                const status = (inv.paymentStatus || 'unpaid').toLowerCase();
+                                let chipColor = 'default';
+                                if (status === 'paid' || status === 'clear') chipColor = 'success';
+                                else if (status === 'partial') chipColor = 'warning';
+                                else if (status === 'unpaid' || status === 'credit') chipColor = 'error';
+
+                                return (
+                                  <TableRow key={inv._id || idx} hover>
+                                    <TableCell>{new Date(inv.date || inv.createdAt).toLocaleDateString()}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>{shortNum}</TableCell>
+                                    <TableCell align="right">Rs. {Number(inv.netAmount || inv.totalAmount || 0).toLocaleString()}</TableCell>
+                                    <TableCell align="right">Rs. {Number(inv.paidAmount || 0).toLocaleString()}</TableCell>
+                                    <TableCell align="center">
+                                      <Chip label={status.toUpperCase()} size="small" color={chipColor} variant="outlined" />
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            {invoices.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={5} align="center" sx={{ py: 2 }}>
+                                  <Typography variant="caption" color="textSecondary">No transactions recorded yet</Typography>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
                     </Box>
 
                     {/* Invoice Detail Dialog */}
@@ -2752,6 +2862,21 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
             </Paper>
           </Grid>
         </Grid>
+      )}
+
+      {/* Payment Modal */}
+      {paymentModalOpen && (
+        <AddPaymentModal
+          open={paymentModalOpen}
+          onClose={() => {
+            setPaymentModalOpen(false);
+            if (selectedCustomer) {
+              openCustomer(selectedCustomer);
+            }
+          }}
+          customer={selectedCustomer}
+          preselectedInvoice={selectedInvoice}
+        />
       )}
 
 
