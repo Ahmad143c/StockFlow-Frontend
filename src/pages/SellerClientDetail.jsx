@@ -2110,6 +2110,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                             <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Status</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Warranty</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Paid Amount</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Remaining Amount</TableCell>
 
                           </TableRow>
                         </TableHead>
@@ -2241,7 +2242,26 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                                     </Tooltip>
                                   )}
                                 </TableCell>
-                                <TableCell align="right" sx={cellSx}>{(() => { const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0; const actualPaid = Number(inv.netAmount || inv.totalAmount || 0) - refundTotal; return `Rs. ${actualPaid.toLocaleString()}`; })()}</TableCell>
+                                <TableCell align="right" sx={cellSx}>
+                                  {(() => {
+                                    const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0;
+                                    const isFullyPaid = inv.paymentStatus === 'Paid';
+                                    const actualPaid = isFullyPaid 
+                                      ? Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - refundTotal) 
+                                      : Number(inv.paidAmount || 0);
+                                    return `Rs. ${actualPaid.toLocaleString()}`;
+                                  })()}
+                                </TableCell>
+                                <TableCell align="right" sx={cellSx}>
+                                  {(() => {
+                                    const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0;
+                                    const isFullyPaid = inv.paymentStatus === 'Paid';
+                                    const remaining = isFullyPaid
+                                      ? 0
+                                      : Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - Number(inv.paidAmount || 0) - refundTotal);
+                                    return `Rs. ${remaining.toLocaleString()}`;
+                                  })()}
+                                </TableCell>
                               </TableRow>
                             );
                           })}

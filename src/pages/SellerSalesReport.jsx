@@ -648,6 +648,8 @@ const SellerSalesReport = () => {
                   <TableCell sx={headerCellSx}>Customer No</TableCell>
                   <TableCell sx={headerCellSx} align="right">Qty</TableCell>
                   <TableCell sx={headerCellSx} align="right">Total (Rs)</TableCell>
+                  <TableCell sx={headerCellSx} align="right">Paid (Rs)</TableCell>
+                  <TableCell sx={headerCellSx} align="right">Due (Rs)</TableCell>
                   <TableCell sx={headerCellSx} align="right">Discount (Rs)</TableCell>
                   <TableCell sx={headerCellSx}>Status</TableCell>
                   <TableCell sx={headerCellSx} align="center">Warranty</TableCell>
@@ -810,6 +812,12 @@ const SellerSalesReport = () => {
                         }, 0)}
                       </TableCell>
                       <TableCell sx={cellSx} align="right">{sale.netAmount}</TableCell>
+                      <TableCell align="right" sx={{ ...cellSx, color: 'success.main', fontWeight: 500 }}>
+                        Rs. {(sale.paymentStatus === 'Paid' ? Number(sale.netAmount || 0) : Number(sale.paidAmount || 0)).toLocaleString()}
+                      </TableCell>
+                      <TableCell align="right" sx={{ ...cellSx, color: 'error.main', fontWeight: 500 }}>
+                        Rs. {(sale.paymentStatus === 'Paid' ? 0 : Math.max(0, Number(sale.netAmount || 0) - Number(sale.paidAmount || 0))).toLocaleString()}
+                      </TableCell>
                       <TableCell sx={cellSx} align="right">
                         <Typography sx={{ color: 'warning.main', fontWeight: 500 }}>
                           Rs. {(Number(sale.discountAmount) || 0).toLocaleString()}
