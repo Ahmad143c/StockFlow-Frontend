@@ -299,28 +299,32 @@ export function generateInvoiceHTML(invoice, products = []) {
           <!-- PAYMENT SUMMARY -->
           <div class="payment-info">
             ${(() => {
-              const paidVal = invoice.paymentMethod === 'Cash'
-                ? (invoice.cashAmount || invoice.paidAmount || 0)
-                : (invoice.paidAmount || 0);
-              const changeVal   = invoice.changeAmount || 0;
               const discountVal = invoice.discountAmount || 0;
               const grossTotal  = netAmount + discountVal;
               const totalRefundAmount = (invoice.refunds || []).reduce(
-                (s, r) => s + (Number(r.totalRefundAmount) || 0), 0
+                (sum, r) => sum + (Number(r.totalRefundAmount) || 0), 0
               );
+              const paidVal = invoice.paymentStatus === 'Paid'
+                ? (invoice.paymentMethod === 'Cash'
+                  ? (invoice.cashAmount || invoice.paidAmount || 0)
+                  : (invoice.paidAmount || 0))
+                : (invoice.paidAmount || 0);
+              const changeVal   = invoice.changeAmount || 0;
 
               let extra = '';
-              if (invoice.paymentStatus === 'Partial Paid') {
-                const remaining = Math.max(0, netAmount - (invoice.paidAmount || 0));
+              const isFullyPaid = invoice.paymentStatus === 'Paid';
+              if (!isFullyPaid) {
+                const remaining = Math.max(0, netAmount - (invoice.paidAmount || 0) - totalRefundAmount);
                 const parts = Array.isArray(invoice.paymentParts) && invoice.paymentParts.length > 0
                   ? invoice.paymentParts
-                  : [{ amount: paidVal, date: new Date(invoice.createdAt || invoice.date).toISOString().split('T')[0] }];
+                  : (invoice.paidAmount > 0 ? [{ amount: invoice.paidAmount, date: new Date(invoice.createdAt || invoice.date).toISOString().split('T')[0] }] : []);
                 const partsHtml = parts.map((p, i2) =>
                   `<div class="row"><span>Payment ${i2 + 1} (${p.date ? new Date(p.date).toLocaleDateString() : '-'})</span><span>Rs. ${Number(p.amount || 0).toLocaleString()}</span></div>`
                 ).join('');
                 extra = `${partsHtml}<div class="row bold"><span>Remaining</span><span>Rs. ${remaining.toLocaleString()}</span></div>`;
-              } else if (invoice.paymentStatus === 'Credit') {
-                extra = `<div class="row"><span>Due Date</span><span>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}</span></div>`;
+                if (invoice.paymentStatus === 'Credit') {
+                  extra += `<div class="row"><span>Due Date</span><span>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}</span></div>`;
+                }
               }
 
               return `
