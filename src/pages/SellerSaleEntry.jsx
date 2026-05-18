@@ -374,8 +374,8 @@ const SellerSaleEntry = () => {
 
   const saveSale = async () => {
     const effectivePaid = paymentStatus === 'Partial Paid' ? (Number(receivedAmount) || 0) : (Number(paidAmount) || 0);
-    if (paymentMethod === 'Cash' && effectivePaid < netAmount) {
-      alert(`Validation Error:\nThe entered Cash Amount (Rs. ${effectivePaid.toLocaleString()}) is below the Net Amount (Rs. ${netAmount.toLocaleString()}).\n\nFor a Cash transaction, the paid amount must be equal to or greater than the Net Amount. Please adjust the Cash Amount before proceeding.`);
+    if (paymentMethod === 'Cash' && paymentStatus === 'Paid' && effectivePaid < netAmount) {
+      alert(`Validation Error:\nThe entered Cash Amount (Rs. ${effectivePaid.toLocaleString()}) is below the Net Amount (Rs. ${netAmount.toLocaleString()}).\n\nFor a fully 'Paid' Cash transaction, the paid amount must be equal to or greater than the Net Amount. Please adjust the Cash Amount or choose a 'Partial Paid' / 'Credit' status if they are not paying in full.`);
       setError(`Cash Amount (Rs. ${effectivePaid.toLocaleString()}) is below the Net Amount (Rs. ${netAmount.toLocaleString()}).`);
       return null;
     }
