@@ -36,8 +36,7 @@ const CustomerLedger = () => {
         const res = await API.get('/customers');
         formalCustomers = Array.isArray(res.data) ? res.data : [];
       } catch (e) {
-        if (e.response?.status !== 404) throw e;
-        console.log('Backend /customers not found');
+        console.error('Backend /customers fetch failed, falling back to sales aggregation:', e);
       }
 
       // We always fetch sales to compute 30+ days overdue map

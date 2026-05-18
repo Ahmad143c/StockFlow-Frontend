@@ -28,8 +28,7 @@ const OutstandingBalances = () => {
         const res = await API.get('/customers/outstanding');
         formalOutstanding = Array.isArray(res.data) ? res.data : [];
       } catch (e) {
-        if (e.response?.status !== 404) throw e;
-        console.log('Backend /customers/outstanding not found');
+        console.error('Backend /customers/outstanding fetch failed, falling back to sales aggregation:', e);
       }
 
       // Fetch sales data to compute days overdue & support aggregation fallback
