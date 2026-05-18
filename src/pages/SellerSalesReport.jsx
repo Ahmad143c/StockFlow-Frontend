@@ -197,6 +197,7 @@ const SellerSalesReport = () => {
     const end = endDate || 'Now';
 
     const grandTotalRevenue = rows.reduce((sum, r) => sum + Number(r.netAmount), 0);
+    const grandTotalRemaining = rows.reduce((sum, r) => sum + Math.max(0, Number(r.netAmount || 0) - Number(r.paidAmount || 0)), 0);
     const grandTotalDiscount = rows.reduce((sum, r) => sum + Number(r.discountAmount || 0), 0);
     const grandTotalQty = rows.reduce((sum, r) => {
       return sum + r.items.reduce((itemSum, item) => {
@@ -221,6 +222,7 @@ const SellerSalesReport = () => {
           <td>${items.length > 20 ? items.substring(0, 20) + '...' : items}</td>
           <td style="text-align: right;">${qty}</td>
           <td style="text-align: right;">${Number(r.netAmount).toFixed(2)}</td>
+          <td style="text-align: right;">${Math.max(0, Number(r.netAmount || 0) - Number(r.paidAmount || 0)).toFixed(2)}</td>
           <td style="text-align: right;">${Number(r.discountAmount || 0).toFixed(2)}</td>
           <td>${r.paymentStatus}</td>
         </tr>
@@ -338,9 +340,10 @@ const SellerSalesReport = () => {
               <th style="width: 6%;">S/N</th>
               <th style="width: 12%;">Date</th>
               <th style="width: 10%;">Invoice</th>
-              <th style="width: 26%;">Items</th>
+              <th style="width: 22%;">Items</th>
               <th style="width: 8%;" class="right">Qty</th>
               <th style="width: 10%;" class="right">Revenue</th>
+              <th style="width: 10%;" class="right">Remaining</th>
               <th style="width: 10%;" class="right">Discount</th>
               <th style="width: 12%;">Status</th>
             </tr>
@@ -351,6 +354,7 @@ const SellerSalesReport = () => {
               <td colspan="4" style="text-align: right;">Grand Total:</td>
               <td class="right">${grandTotalQty}</td>
               <td class="right">Rs. ${grandTotalRevenue.toFixed(2)}</td>
+              <td class="right">Rs. ${grandTotalRemaining.toFixed(2)}</td>
               <td class="right">Rs. ${grandTotalDiscount.toFixed(2)}</td>
               <td></td>
             </tr>
@@ -648,6 +652,7 @@ const SellerSalesReport = () => {
                   <TableCell sx={headerCellSx}>Customer No</TableCell>
                   <TableCell sx={headerCellSx} align="right">Qty</TableCell>
                   <TableCell sx={headerCellSx} align="right">Total (Rs)</TableCell>
+                  <TableCell sx={headerCellSx} align="right">Remaining (Rs)</TableCell>
                   <TableCell sx={headerCellSx} align="right">Discount (Rs)</TableCell>
                   <TableCell sx={headerCellSx}>Status</TableCell>
                   <TableCell sx={headerCellSx} align="center">Warranty</TableCell>
@@ -810,6 +815,11 @@ const SellerSalesReport = () => {
                         }, 0)}
                       </TableCell>
                       <TableCell sx={cellSx} align="right">{sale.netAmount}</TableCell>
+                      <TableCell sx={cellSx} align="right">
+                        <Typography sx={{ color: 'error.main', fontWeight: 600 }}>
+                          Rs. {Math.max(0, Number(sale.netAmount || 0) - Number(sale.paidAmount || 0)).toLocaleString()}
+                        </Typography>
+                      </TableCell>
                       <TableCell sx={cellSx} align="right">
                         <Typography sx={{ color: 'warning.main', fontWeight: 500 }}>
                           Rs. {(Number(sale.discountAmount) || 0).toLocaleString()}

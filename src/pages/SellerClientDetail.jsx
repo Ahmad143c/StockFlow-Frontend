@@ -1713,15 +1713,24 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                         </Typography>
 
                         {selectedCustomer && (
-                          <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <Typography variant="caption" sx={{ color: darkMode ? '#aaa' : '#666', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                              <PhoneIcon sx={{ fontSize: { xs: 12, sm: 14 } }} /> {selectedCustomer.contact || '-'}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: darkMode ? '#aaa' : '#666', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                              <EmailIcon sx={{ fontSize: { xs: 12, sm: 14 } }} /> {selectedCustomer.email || '-'}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: darkMode ? '#aaa' : '#666', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                              <ReceiptIcon sx={{ fontSize: { xs: 12, sm: 14 } }} /> {(selectedCustomer.invoices || []).length || 0} invoices
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', gap: { xs: 1, sm: 2 }, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <Typography variant="caption" sx={{ color: darkMode ? '#aaa' : '#666', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                                <PhoneIcon sx={{ fontSize: { xs: 12, sm: 14 } }} /> {selectedCustomer.contact || '-'}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: darkMode ? '#aaa' : '#666', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.75rem', sm: '0.75rem' } }}>
+                                <EmailIcon sx={{ fontSize: { xs: 12, sm: 14 } }} /> {selectedCustomer.email || '-'}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: darkMode ? '#aaa' : '#666', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                                <ReceiptIcon sx={{ fontSize: { xs: 12, sm: 14 } }} /> {(selectedCustomer.invoices || []).length || 0} invoices
+                              </Typography>
+                            </Box>
+                            <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                              <ReceiptIcon sx={{ fontSize: { xs: 12, sm: 14 } }} /> Remaining Amount of Invoices: Rs. {((selectedCustomer.invoices || []).reduce((sum, inv) => {
+                                const refundTotal = inv.refunds ? inv.refunds.reduce((s, r) => s + Number(r.totalRefundAmount || 0), 0) : 0;
+                                const remaining = Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - refundTotal - Number(inv.paidAmount || 0));
+                                return sum + remaining;
+                              }, 0)).toLocaleString()}
                             </Typography>
                           </Box>
                         )}
@@ -2110,6 +2119,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                             <TableCell sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Status</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Warranty</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Paid Amount</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: { xs: '0.75rem', sm: '0.875rem' }, padding: { xs: '8px 6px', sm: '12px 16px' } }}>Remaining Amount</TableCell>
 
                           </TableRow>
                         </TableHead>
@@ -2242,6 +2252,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                                   )}
                                 </TableCell>
                                 <TableCell align="right" sx={cellSx}>{(() => { const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0; const actualPaid = Number(inv.netAmount || inv.totalAmount || 0) - refundTotal; return `Rs. ${actualPaid.toLocaleString()}`; })()}</TableCell>
+                                <TableCell align="right" sx={cellSx}>{(() => { const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0; const remaining = Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - refundTotal - Number(inv.paidAmount || 0)); return `Rs. ${remaining.toLocaleString()}`; })()}</TableCell>
                               </TableRow>
                             );
                           })}

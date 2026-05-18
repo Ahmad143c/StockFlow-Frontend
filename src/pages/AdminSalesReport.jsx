@@ -208,11 +208,12 @@ const AdminSalesReport = () => {
   useEffect(() => { setPage(0); }, [search, status, startDate, endDate]);
 
   // KPI (Summary) - memoized
-  const { totalRevenue, totalSales, totalQty } = useMemo(() => {
+  const { totalRevenue, totalSales, totalQty, totalRemaining } = useMemo(() => {
     return {
       totalRevenue: filteredSales.reduce((sum, s) => sum + Number(s.netAmount), 0),
       totalSales: filteredSales.length,
-      totalQty: filteredSales.reduce((sum, s) => sum + Number(s.totalQuantity), 0)
+      totalQty: filteredSales.reduce((sum, s) => sum + Number(s.totalQuantity), 0),
+      totalRemaining: filteredSales.reduce((sum, s) => sum + Math.max(0, Number(s.netAmount || 0) - Number(s.paidAmount || 0)), 0)
     };
   }, [filteredSales]);
 
@@ -246,6 +247,7 @@ const AdminSalesReport = () => {
     const end = endDate || 'Now';
 
     const grandTotalRevenue = rows.reduce((sum, r) => sum + Number(r.netAmount), 0);
+    const grandTotalRemaining = rows.reduce((sum, r) => sum + Math.max(0, Number(r.netAmount || 0) - Number(r.paidAmount || 0)), 0);
     const grandTotalDiscount = rows.reduce((sum, r) => sum + Number(r.discountAmount || 0), 0);
     const grandTotalQty = rows.reduce((sum, r) => {
       return sum + r.items.reduce((itemSum, item) => {
@@ -274,6 +276,7 @@ const AdminSalesReport = () => {
           <td>${items.length > 20 ? items.substring(0, 20) + '...' : items}</td>
           <td style="text-align: right;">${qty}</td>
           <td style="text-align: right;">${Number(r.netAmount).toFixed(2)}</td>
+          <td style="text-align: right;">${Math.max(0, Number(r.netAmount || 0) - Number(r.paidAmount || 0)).toFixed(2)}</td>
           <td style="text-align: right;">${Number(r.discountAmount || 0).toFixed(2)}</td>
           <td style="text-align: right;">${profit.toFixed(2)}</td>
           <td>${r.paymentStatus}</td>
@@ -392,12 +395,13 @@ const AdminSalesReport = () => {
               <th style="width: 6%;">S/N</th>
               <th style="width: 12%;">Date</th>
               <th style="width: 10%;">Invoice</th>
-              <th style="width: 22%;">Items</th>
-              <th style="width: 8%;" class="right">Qty</th>
+              <th style="width: 18%;">Items</th>
+              <th style="width: 6%;" class="right">Qty</th>
               <th style="width: 10%;" class="right">Revenue</th>
+              <th style="width: 10%;" class="right">Remaining</th>
               <th style="width: 10%;" class="right">Discount</th>
               <th style="width: 10%;" class="right">Profit</th>
-              <th style="width: 12%;">Status</th>
+              <th style="width: 10%;">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -406,6 +410,7 @@ const AdminSalesReport = () => {
               <td colspan="4" style="text-align: right;">Grand Total:</td>
               <td class="right">${grandTotalQty}</td>
               <td class="right">Rs. ${grandTotalRevenue.toFixed(2)}</td>
+              <td class="right">Rs. ${grandTotalRemaining.toFixed(2)}</td>
               <td class="right">Rs. ${grandTotalDiscount.toFixed(2)}</td>
               <td class="right">Rs. ${grandTotalProfit.toFixed(2)}</td>
               <td></td>
@@ -534,15 +539,26 @@ const AdminSalesReport = () => {
           </Box>
 
           {/* Summary Stats */}
-          <Grid container spacing={1} mb={2}>
-            <Grid item xs={12} sm={6} md={1}>
-              <Typography variant={isSm ? 'body2' : 'body1'}>Total Sales: {totalSales}</Typography>
+          <Grid container spacing={2} mb={2} alignItems="center">
+            <Grid item xs={12} sm={6} md={2}>
+              <Typography variant={isSm ? 'body2' : 'body1'} sx={{ fontWeight: 500 }}>
+                Total Sales: {totalSales}
+              </Typography>
             </Grid>
-            <Grid item xs={12} sm={6} md={1}>
-              <Typography variant={isSm ? 'body2' : 'body1'}>Total Qty: {totalQty}</Typography>
+            <Grid item xs={12} sm={6} md={2}>
+              <Typography variant={isSm ? 'body2' : 'body1'} sx={{ fontWeight: 500 }}>
+                Total Qty: {totalQty}
+              </Typography>
             </Grid>
-            <Grid item xs={12} sm={12} md={3}>
-              <Typography variant={isSm ? 'body2' : 'body1'}>Total Revenue: Rs. {totalRevenue}</Typography>
+            <Grid item xs={12} sm={6} md={4}>
+              <Typography variant={isSm ? 'body2' : 'body1'} sx={{ fontWeight: 500 }}>
+                Total Revenue: Rs. {totalRevenue.toLocaleString()}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Typography variant={isSm ? 'body2' : 'body1'} sx={{ color: 'error.main', fontWeight: 700 }}>
+                Remaining Invoices Payment: Rs. {totalRemaining.toLocaleString()}
+              </Typography>
             </Grid>
           </Grid>
 
@@ -719,6 +735,7 @@ const AdminSalesReport = () => {
                   <TableCell sx={headerCellSx}>Customer No</TableCell>
                   <TableCell sx={headerCellSx} align="right">Qty</TableCell>
                   <TableCell sx={headerCellSx} align="right">Total (Rs)</TableCell>
+                  <TableCell sx={headerCellSx} align="right">Remaining (Rs)</TableCell>
                   <TableCell sx={headerCellSx} align="right">Discount (Rs)</TableCell>
                   <TableCell sx={headerCellSx} align="right">Profit (Rs)</TableCell>
                   <TableCell sx={headerCellSx}>Status</TableCell>
@@ -887,6 +904,11 @@ const AdminSalesReport = () => {
                         }, 0)}
                       </TableCell>
                       <TableCell sx={cellSx} align="right">{sale.netAmount}</TableCell>
+                      <TableCell sx={cellSx} align="right">
+                        <Typography sx={{ color: 'error.main', fontWeight: 600 }}>
+                          Rs. {Math.max(0, Number(sale.netAmount || 0) - Number(sale.paidAmount || 0)).toLocaleString()}
+                        </Typography>
+                      </TableCell>
                       <TableCell sx={cellSx} align="right">
                         <Typography sx={{ color: 'warning.main', fontWeight: 500 }}>
                           Rs. {(Number(sale.discountAmount) || 0).toLocaleString()}
