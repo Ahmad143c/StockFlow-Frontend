@@ -56,40 +56,72 @@ const OutstandingBalances = () => {
         }
       });
 
-      let finalData = [];
+      // Dynamically merge formal outstanding balances and derived outstanding balances from sales
+      const map = {};
 
-      // If formal list is empty, aggregate from sales
-      if (formalOutstanding.length === 0) {
-        console.log('No formal outstanding balances found, aggregating from /sales');
-        const map = {};
-        allSales.forEach(s => {
-          const status = (s.paymentStatus || '').toLowerCase();
-          if (status !== 'paid' && status !== 'clear') {
-            const name = s.customerName || s.customer?.name || 'Unknown';
-            const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
-            const id = s.customerId?._id || s.customerId || name;
+      // 1. Initialize map with formal outstanding customers
+      formalOutstanding.forEach(c => {
+        const idStr = String(c._id);
+        map[idStr] = {
+          _id: c._id,
+          name: c.name,
+          contact: c.contact || '',
+          totalPurchases: 0,
+          totalPaid: 0,
+          remainingBalance: Number(c.previousDue || 0)
+        };
+      });
 
-            if (!map[id]) {
-              map[id] = {
-                _id: id,
-                name,
-                contact,
-                totalPurchases: 0,
-                totalPaid: 0,
-                remainingBalance: 0
-              };
-            }
-            const net = Number(s.netAmount || s.totalAmount || 0);
-            const paid = Number(s.paidAmount || s.cashAmount || 0);
-            map[id].totalPurchases += net;
-            map[id].totalPaid += paid;
-            map[id].remainingBalance += (net - paid);
+      // 2. Aggregate sales
+      allSales.forEach(s => {
+        const name = s.customerName || s.customer?.name || 'Unknown';
+        const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
+        const idObj = s.customerId?._id || s.customerId;
+
+        let key = null;
+        if (idObj) {
+          key = String(idObj);
+        } else {
+          // Check if formal name matches
+          const matched = formalOutstanding.find(fc => fc.name?.toLowerCase() === name.toLowerCase());
+          if (matched) {
+            key = String(matched._id);
+          } else {
+            key = name;
           }
-        });
-        finalData = Object.values(map).filter(c => c.remainingBalance > 0);
-      } else {
-        finalData = formalOutstanding;
-      }
+        }
+
+        if (!map[key]) {
+          map[key] = {
+            _id: key,
+            name,
+            contact,
+            totalPurchases: 0,
+            totalPaid: 0,
+            remainingBalance: 0
+          };
+        }
+
+        const net = Number(s.netAmount || s.totalAmount || 0);
+        const paid = Number(s.paidAmount || s.cashAmount || 0);
+
+        map[key].totalPurchases += net;
+        map[key].totalPaid += paid;
+        map[key].remainingBalance += (net - paid);
+      });
+
+      // 3. For any formal customer that didn't have sales, load their database totals
+      formalOutstanding.forEach(c => {
+        const idStr = String(c._id);
+        if (map[idStr] && map[idStr].totalPurchases === 0 && map[idStr].totalPaid === 0) {
+          map[idStr].remainingBalance = Number(c.currentBalance || c.remainingBalance || c.previousDue || 0);
+          map[idStr].totalPurchases = Number(c.totalPurchases || 0);
+          map[idStr].totalPaid = Number(c.totalPaid || 0);
+        }
+      });
+
+      // Filter to only keep customers with positive outstanding balance
+      finalData = Object.values(map).filter(c => c.remainingBalance > 0);
 
       // Map days overdue onto the dataset
       finalData = finalData.map(c => {

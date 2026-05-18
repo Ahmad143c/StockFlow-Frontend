@@ -67,36 +67,75 @@ const CustomerLedger = () => {
       });
       setOverdueMap(tempOverdueMap);
 
-      // If formal customers is empty, try to aggregate from sales
-      if (formalCustomers.length === 0) {
-        console.log('No formal customers found, aggregating from /sales');
-        const map = {};
-        allSales.forEach(s => {
-          const name = s.customerName || s.customer?.name || 'Unknown';
-          const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
-          const id = s.customerId?._id || s.customerId || name;
+      // Dynamically merge formal customers and derived customers from sales
+      const map = {};
+      
+      // 1. Initialize map with formal customers
+      formalCustomers.forEach(c => {
+        const idStr = String(c._id);
+        map[idStr] = {
+          _id: c._id,
+          name: c.name,
+          contact: c.contact || '',
+          totalPurchases: 0,
+          totalPaid: 0,
+          remainingBalance: Number(c.previousDue || 0),
+          previousDue: Number(c.previousDue || 0),
+          isDerived: false
+        };
+      });
 
-          if (!map[id]) {
-            map[id] = {
-              _id: id,
-              name,
-              contact,
-              totalPurchases: 0,
-              totalPaid: 0,
-              remainingBalance: 0,
-              isDerived: true
-            };
+      // 2. Aggregate sales
+      allSales.forEach(s => {
+        const name = s.customerName || s.customer?.name || 'Unknown';
+        const contact = s.customerContact || s.customer?.phone || s.customerPhone || '';
+        const idObj = s.customerId?._id || s.customerId;
+        
+        let key = null;
+        if (idObj) {
+          key = String(idObj);
+        } else {
+          // Check if a formal customer name matches
+          const matched = formalCustomers.find(fc => fc.name?.toLowerCase() === name.toLowerCase());
+          if (matched) {
+            key = String(matched._id);
+          } else {
+            key = name;
           }
-          const net = Number(s.netAmount || s.totalAmount || 0);
-          const paid = Number(s.paidAmount || s.cashAmount || 0);
-          map[id].totalPurchases += net;
-          map[id].totalPaid += paid;
-          map[id].remainingBalance += (net - paid);
-        });
-        setCustomers(Object.values(map));
-      } else {
-        setCustomers(formalCustomers);
-      }
+        }
+
+        if (!map[key]) {
+          map[key] = {
+            _id: key,
+            name,
+            contact,
+            totalPurchases: 0,
+            totalPaid: 0,
+            remainingBalance: 0,
+            previousDue: 0,
+            isDerived: true
+          };
+        }
+
+        const net = Number(s.netAmount || s.totalAmount || 0);
+        const paid = Number(s.paidAmount || s.cashAmount || 0);
+        
+        map[key].totalPurchases += net;
+        map[key].totalPaid += paid;
+        map[key].remainingBalance += (net - paid);
+      });
+
+      // 3. For any formal customer that didn't have sales, load their database totals
+      formalCustomers.forEach(c => {
+        const idStr = String(c._id);
+        if (map[idStr] && map[idStr].totalPurchases === 0 && map[idStr].totalPaid === 0) {
+          map[idStr].remainingBalance = Number(c.currentBalance || c.remainingBalance || c.previousDue || 0);
+          map[idStr].totalPurchases = Number(c.totalPurchases || 0);
+          map[idStr].totalPaid = Number(c.totalPaid || 0);
+        }
+      });
+
+      setCustomers(Object.values(map));
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch customers');
     } finally {
