@@ -31,6 +31,31 @@ const CustomerLedger = () => {
     setLoading(true);
     setError(null);
     try {
+      // Decode current user role & ID
+      let currentUserId = null;
+      let currentUserRole = null;
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const decoded = JSON.parse(window.atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+          currentUserId = decoded?.id || decoded?._id || null;
+          currentUserRole = decoded?.role || null;
+        }
+      } catch (e) {
+        console.error('Failed to parse token in CustomerLedger:', e);
+      }
+
+      if (!currentUserRole || !currentUserId) {
+        try {
+          const stored = localStorage.getItem('user');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (!currentUserId) currentUserId = parsed?._id || parsed?.id || null;
+            if (!currentUserRole) currentUserRole = parsed?.role || null;
+          }
+        } catch (e) {}
+      }
+
       let formalCustomers = [];
       try {
         const res = await API.get('/customers');
@@ -39,10 +64,11 @@ const CustomerLedger = () => {
         console.error('Backend /customers fetch failed, falling back to sales aggregation:', e);
       }
 
-      // We always fetch sales to compute 30+ days overdue map
+      // If user is seller/staff, fetch only their own sales
       let allSales = [];
       try {
-        const salesRes = await API.get('/sales');
+        const url = `/sales${currentUserRole === 'staff' && currentUserId ? `?sellerId=${currentUserId}` : ''}`;
+        const salesRes = await API.get(url);
         allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
       } catch (err) {
         console.error('Failed to fetch sales for overdue computation:', err);
@@ -80,7 +106,8 @@ const CustomerLedger = () => {
           totalPaid: 0,
           remainingBalance: Number(c.previousDue || 0),
           previousDue: Number(c.previousDue || 0),
-          isDerived: false
+          isDerived: false,
+          hasSalesWithSeller: false
         };
       });
 
@@ -112,7 +139,8 @@ const CustomerLedger = () => {
             totalPaid: 0,
             remainingBalance: 0,
             previousDue: 0,
-            isDerived: true
+            isDerived: true,
+            hasSalesWithSeller: false
           };
         }
 
@@ -122,6 +150,7 @@ const CustomerLedger = () => {
         map[key].totalPurchases += net;
         map[key].totalPaid += paid;
         map[key].remainingBalance += (net - paid);
+        map[key].hasSalesWithSeller = true;
       });
 
       // 3. For any formal customer that didn't have sales, load their database totals
@@ -134,7 +163,13 @@ const CustomerLedger = () => {
         }
       });
 
-      setCustomers(Object.values(map));
+      // Filter to only include specific seller customers if logged in as a seller/staff
+      let finalCustomers = Object.values(map);
+      if (currentUserRole === 'staff') {
+        finalCustomers = finalCustomers.filter(c => c.hasSalesWithSeller);
+      }
+
+      setCustomers(finalCustomers);
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to fetch customers');
     } finally {
