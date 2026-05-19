@@ -2349,52 +2349,62 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                         </Grid>
                       </Grid>
 
-                      {/* MiniLedger table */}
+                      {/* MiniLedger table showing only Added Payment transactions */}
                       <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: darkMode ? '#aaa' : '#666', textAlign: 'left' }}>
-                        Last 10 Transactions
+                        Last 10 Added Payment Transactions
                       </Typography>
                       <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
                         <Table size="small">
                           <TableHead>
                             <TableRow sx={{ bgcolor: darkMode ? '#333' : '#f5f5f5' }}>
-                              <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }}>Payment Date</TableCell>
                               <TableCell sx={{ fontWeight: 'bold' }}>Invoice #</TableCell>
-                              <TableCell sx={{ fontWeight: 'bold' }} align="right">Amount</TableCell>
-                              <TableCell sx={{ fontWeight: 'bold' }} align="right">Paid</TableCell>
-                              <TableCell sx={{ fontWeight: 'bold' }} align="center">Status</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }} align="right">Invoice Total</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }} align="right">Paid Amount</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }} align="center">Method</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {[...invoices]
-                              .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
-                              .slice(0, 10)
-                              .map((inv, idx) => {
-                                const shortNum = inv.invoiceNumber || inv._id?.toString().slice(-6);
-                                const status = (inv.paymentStatus || 'unpaid').toLowerCase();
-                                let chipColor = 'default';
-                                if (status === 'paid' || status === 'clear') chipColor = 'success';
-                                else if (status === 'partial') chipColor = 'warning';
-                                else if (status === 'unpaid' || status === 'credit') chipColor = 'error';
+                            {(() => {
+                              const paymentTransactions = [...invoices]
+                                .flatMap((inv, invIdx) => {
+                                  const parts = Array.isArray(inv.paymentParts) ? inv.paymentParts : [];
+                                  return parts.map((part, pIdx) => ({
+                                    key: `${inv._id || invIdx}-${pIdx}`,
+                                    invoiceNumber: inv.invoiceNumber || inv._id?.toString().slice(-6),
+                                    invoiceAmount: Number(inv.netAmount || inv.totalAmount || 0),
+                                    paymentAmount: Number(part.amount || 0),
+                                    paymentDate: part.date,
+                                    paymentMethod: inv.paymentMethod || 'Cash',
+                                  }));
+                                })
+                                .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
+                                .slice(0, 10);
 
+                              if (paymentTransactions.length === 0) {
                                 return (
-                                  <TableRow key={inv._id || idx} hover>
-                                    <TableCell>{new Date(inv.date || inv.createdAt).toLocaleDateString()}</TableCell>
-                                    <TableCell sx={{ fontWeight: 600 }}>{shortNum}</TableCell>
-                                    <TableCell align="right">Rs. {Number(inv.netAmount || inv.totalAmount || 0).toLocaleString()}</TableCell>
-                                    <TableCell align="right">Rs. {Number(inv.paidAmount || 0).toLocaleString()}</TableCell>
-                                    <TableCell align="center">
-                                      <Chip label={status.toUpperCase()} size="small" color={chipColor} variant="outlined" />
+                                  <TableRow>
+                                    <TableCell colSpan={5} align="center" sx={{ py: 2 }}>
+                                      <Typography variant="caption" color="textSecondary">No payment transactions recorded yet</Typography>
                                     </TableCell>
                                   </TableRow>
                                 );
-                              })}
-                            {invoices.length === 0 && (
-                              <TableRow>
-                                <TableCell colSpan={5} align="center" sx={{ py: 2 }}>
-                                  <Typography variant="caption" color="textSecondary">No transactions recorded yet</Typography>
-                                </TableCell>
-                              </TableRow>
-                            )}
+                              }
+
+                              return paymentTransactions.map((pay) => (
+                                <TableRow key={pay.key} hover>
+                                  <TableCell>{new Date(pay.paymentDate).toLocaleDateString()}</TableCell>
+                                  <TableCell sx={{ fontWeight: 600 }}>{pay.invoiceNumber}</TableCell>
+                                  <TableCell align="right">Rs. {pay.invoiceAmount.toLocaleString()}</TableCell>
+                                  <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>
+                                    Rs. {pay.paymentAmount.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell align="center">
+                                    <Chip label={pay.paymentMethod.toUpperCase()} size="small" variant="outlined" color="primary" />
+                                  </TableCell>
+                                </TableRow>
+                              ));
+                            })()}
                           </TableBody>
                         </Table>
                       </TableContainer>
