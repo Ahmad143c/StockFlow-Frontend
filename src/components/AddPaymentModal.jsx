@@ -32,7 +32,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
       const hasValidId = customer._id && /^[0-9a-fA-F]{24}$/.test(customer._id);
       const res = await API.get(`/sales${hasValidId ? `?customerId=${customer._id}` : ''}`);
       const rawSales = Array.isArray(res.data) ? res.data : [];
-      
+
       // Filter unpaid, partial, or credit invoices specifically for THIS customer
       const unpaid = rawSales
         .filter(s => {
@@ -126,7 +126,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
   const allocation = useMemo(() => {
     const inputAmount = Number(formData.amount) || 0;
     let remainingPayment = inputAmount;
-    
+
     return invoices.map(inv => {
       const remainingBalance = inv.remainingBalance;
       const allocated = Math.min(remainingBalance, remainingPayment);
@@ -134,7 +134,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
 
       const newPaid = inv.paidAmount + allocated;
       const remainingAfter = Math.max(0, remainingBalance - allocated);
-      
+
       let newStatus = inv.paymentStatus;
       if (allocated > 0) {
         newStatus = remainingAfter === 0 ? 'paid' : 'partial';
@@ -166,16 +166,9 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
     try {
       // 1. Process PATCH for each affected invoice
       for (const item of allocatedInvoices) {
-        const existingParts = Array.isArray(item.paymentParts) ? item.paymentParts : [];
-        const newPaymentPart = {
-          amount: Number(item.allocated),
-          date: formData.date || new Date().toISOString().split('T')[0]
-        };
-
         await API.put(`/sales/${item._id}`, {
           paidAmount: item.newPaid,
-          paymentStatus: item.newStatus,
-          paymentParts: [...existingParts, newPaymentPart]
+          paymentStatus: item.newStatus
         });
         settledList.push({
           invoiceNumber: item.invoiceNumber || item._id.toString().slice(-6),
@@ -217,7 +210,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
       });
     } catch (e) {
       console.error(e);
-      setError(e.response?.data?.error || e.response?.data?.message || 'Failed to process payment allocation. Note: Only registered customers can receive payments.');
+      setError(e.response?.data?.message || 'Failed to process payment allocation. Note: Only registered customers can receive payments.');
     } finally {
       setLoading(false);
     }
@@ -234,7 +227,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             A total of <strong>Rs. {successSummary.total.toLocaleString()}</strong> has been allocated across invoices.
           </Typography>
-          
+
           <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, mb: 3, textAlign: 'left' }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               Settlement Breakdown:
@@ -248,10 +241,10 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
                       <Typography variant="caption" color="text.secondary">
                         Rs. {item.allocated.toLocaleString()}
                       </Typography>
-                      <Chip 
-                        label={item.status.toUpperCase()} 
-                        size="small" 
-                        color={item.status === 'paid' ? 'success' : 'warning'} 
+                      <Chip
+                        label={item.status.toUpperCase()}
+                        size="small"
+                        color={item.status === 'paid' ? 'success' : 'warning'}
                       />
                     </Box>
                   </Box>
@@ -263,7 +256,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
               </Typography>
             )}
           </Box>
-          
+
           <Button variant="contained" color="success" onClick={onClose} fullWidth>
             Close & Refresh
           </Button>
@@ -280,7 +273,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          
+
           <Box sx={{ mb: 3, p: 2, bgcolor: 'background.default', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box>
               <Typography variant="caption" color="text.secondary">Current Dues</Typography>
@@ -394,9 +387,9 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
                               + Rs. {item.allocated.toLocaleString()}
                             </TableCell>
                             <TableCell align="center">
-                              <Chip 
-                                label={item.allocated > 0 ? item.newStatus.toUpperCase() : 'UNCHANGED'} 
-                                color={item.allocated > 0 ? (item.newStatus === 'paid' ? 'success' : 'warning') : 'default'} 
+                              <Chip
+                                label={item.allocated > 0 ? item.newStatus.toUpperCase() : 'UNCHANGED'}
+                                color={item.allocated > 0 ? (item.newStatus === 'paid' ? 'success' : 'warning') : 'default'}
                                 size="small"
                               />
                             </TableCell>
@@ -412,10 +405,10 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
         </DialogContent>
         <DialogActions sx={{ p: 2, bgcolor: 'background.default' }}>
           <Button onClick={onClose} color="inherit" disabled={loading}>Cancel</Button>
-          <Button 
-            type="submit" 
-            variant="contained" 
-            color="primary" 
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
             startIcon={<SaveIcon />}
             disabled={loading || invoices.length === 0}
           >
