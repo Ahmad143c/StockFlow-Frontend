@@ -67,12 +67,26 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
       // Sort chronological (oldest first)
       unpaid.sort((a, b) => new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt));
 
-      // If preselected invoice is passed, bring it to the top
+      // If preselected invoice is passed, show ONLY this invoice in the outstanding list
       if (preselectedInvoice) {
-        const index = unpaid.findIndex(inv => String(inv._id) === String(preselectedInvoice._id));
-        if (index > -1) {
-          const [selected] = unpaid.splice(index, 1);
-          unpaid.unshift(selected);
+        const selected = unpaid.find(inv => String(inv._id) === String(preselectedInvoice._id));
+        if (selected) {
+          setInvoices([selected]);
+          return;
+        } else {
+          // Fallback: If not found in the unpaid list, format and show it directly if there's any remaining balance
+          const net = Number(preselectedInvoice.netAmount || preselectedInvoice.totalAmount || 0);
+          const paid = Number(preselectedInvoice.paidAmount || 0);
+          const remaining = Math.max(0, net - paid);
+          if (remaining > 0) {
+            setInvoices([{
+              ...preselectedInvoice,
+              netAmount: net,
+              paidAmount: paid,
+              remainingBalance: remaining
+            }]);
+            return;
+          }
         }
       }
 

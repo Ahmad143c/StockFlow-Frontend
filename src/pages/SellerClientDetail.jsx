@@ -130,6 +130,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
   const [refundPage, setRefundPage] = useState(0);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [customerPayments, setCustomerPayments] = useState([]);
 
   // Reset pagination when filters change
   useEffect(() => { setInvoicePage(0); setRefundPage(0); }, [invoiceQuery, startDate, endDate, paymentStatusFilter, selectedCustomer]);
@@ -332,6 +333,53 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
     [sellerId, startDate, endDate, isValidSellerId]
   );
 
+  // Fetch actual payment transactions recorded in customer ledger
+  const fetchCustomerPayments = useCallback(async (cust) => {
+    if (!cust) {
+      setCustomerPayments([]);
+      return;
+    }
+    // Find a valid 24-character MongoDB ObjectId from cust._id or invoices
+    let resolvedId = cust._id;
+    if (!resolvedId || !/^[0-9a-fA-F]{24}$/.test(resolvedId)) {
+      const invList = cust.invoices || [];
+      const foundInvoice = invList.find(inv => {
+        const cId = inv.customerId?._id || inv.customerId;
+        return cId && /^[0-9a-fA-F]{24}$/.test(String(cId));
+      });
+      if (foundInvoice) {
+        resolvedId = String(foundInvoice.customerId?._id || foundInvoice.customerId);
+      }
+    }
+
+    if (!resolvedId || !/^[0-9a-fA-F]{24}$/.test(resolvedId)) {
+      setCustomerPayments([]);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await API.get(`/customers/ledger/${resolvedId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const ledgerEntries = Array.isArray(res.data) ? res.data : [];
+      // Filter only payment entries (excluding Sale, Invoice, debit)
+      const payments = ledgerEntries.filter(entry => {
+        return entry.transactionType === 'Payment' || entry.type === 'Payment' || entry.credit > 0;
+      }).map(entry => ({
+        date: entry.transactionDate || entry.date || new Date().toISOString(),
+        amount: entry.credit || entry.amount || 0,
+        notes: entry.description || entry.notes || 'Smart Payment Allocation',
+        paymentMethod: entry.paymentMethod || 'Cash',
+        invoiceNumber: entry.reference || '-'
+      }));
+      setCustomerPayments(payments);
+    } catch (e) {
+      console.error('Failed to fetch customer payments/ledger:', e);
+      setCustomerPayments([]);
+    }
+  }, []);
+
   // Open customer and fetch their invoices
   const openCustomer = useCallback(
     async (cust) => {
@@ -340,8 +388,10 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
       setInvoiceQuery('');
       // Fetch invoices for this specific customer (date filters will be applied by fetchInvoices)
       await fetchInvoices(cust.name, cust.contact, null);
+      // Fetch actual payment ledger entries
+      await fetchCustomerPayments(cust);
     },
-    [fetchInvoices]
+    [fetchInvoices, fetchCustomerPayments]
   );
 
   // Search / filter invoices directly (by invoice id/number and date range)
@@ -407,6 +457,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
       await fetchCustomers();
       setSelectedCustomer(null);
       setInvoices([]);
+      setCustomerPayments([]);
       return;
     }
 
@@ -430,6 +481,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
     // This ensures user must explicitly select a customer to see invoices.
     setInvoices([]);
     setSelectedCustomer(null);
+    setCustomerPayments([]);
   }, [query, contactQuery, fetchInvoices, fetchCustomers]);
 
   // Clear all filters
@@ -443,6 +495,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
     setSelectedCustomer(null);
     setInvoices([]);
     setRefundInvoices([]);
+    setCustomerPayments([]);
     fetchCustomers();
   }, [fetchCustomers]);
 
@@ -462,6 +515,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
       setSelectedCustomer(null);
       setInvoices([]);
       setRefundInvoices([]);
+      setCustomerPayments([]);
       fetchCustomers();
     } catch (e) {
       console.error('Delete error:', e);
@@ -2359,52 +2413,37 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                             <TableRow sx={{ bgcolor: darkMode ? '#333' : '#f5f5f5' }}>
                               <TableCell sx={{ fontWeight: 'bold' }}>Payment Date</TableCell>
                               <TableCell sx={{ fontWeight: 'bold' }}>Invoice #</TableCell>
-                              <TableCell sx={{ fontWeight: 'bold' }} align="right">Invoice Total</TableCell>
                               <TableCell sx={{ fontWeight: 'bold' }} align="right">Paid Amount</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold' }}>Description/Notes</TableCell>
                               <TableCell sx={{ fontWeight: 'bold' }} align="center">Method</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {(() => {
-                              const paymentTransactions = [...invoices]
-                                .flatMap((inv, invIdx) => {
-                                  const parts = Array.isArray(inv.paymentParts) ? inv.paymentParts : [];
-                                  return parts.map((part, pIdx) => ({
-                                    key: `${inv._id || invIdx}-${pIdx}`,
-                                    invoiceNumber: inv.invoiceNumber || inv._id?.toString().slice(-6),
-                                    invoiceAmount: Number(inv.netAmount || inv.totalAmount || 0),
-                                    paymentAmount: Number(part.amount || 0),
-                                    paymentDate: part.date,
-                                    paymentMethod: inv.paymentMethod || 'Cash',
-                                  }));
-                                })
-                                .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
-                                .slice(0, 10);
-
-                              if (paymentTransactions.length === 0) {
-                                return (
-                                  <TableRow>
-                                    <TableCell colSpan={5} align="center" sx={{ py: 2 }}>
-                                      <Typography variant="caption" color="textSecondary">No payment transactions recorded yet</Typography>
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              }
-
-                              return paymentTransactions.map((pay) => (
-                                <TableRow key={pay.key} hover>
-                                  <TableCell>{new Date(pay.paymentDate).toLocaleDateString()}</TableCell>
-                                  <TableCell sx={{ fontWeight: 600 }}>{pay.invoiceNumber}</TableCell>
-                                  <TableCell align="right">Rs. {pay.invoiceAmount.toLocaleString()}</TableCell>
+                            {customerPayments
+                              .sort((a, b) => new Date(b.date) - new Date(a.date))
+                              .slice(0, 10)
+                              .map((pay, idx) => (
+                                <TableRow key={idx} hover>
+                                  <TableCell>{new Date(pay.date).toLocaleDateString()}</TableCell>
+                                  <TableCell sx={{ fontWeight: 600 }}>{pay.invoiceNumber || '-'}</TableCell>
                                   <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>
-                                    Rs. {pay.paymentAmount.toLocaleString()}
+                                    Rs. {pay.amount.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {pay.notes || '-'}
                                   </TableCell>
                                   <TableCell align="center">
                                     <Chip label={pay.paymentMethod.toUpperCase()} size="small" variant="outlined" color="primary" />
                                   </TableCell>
                                 </TableRow>
-                              ));
-                            })()}
+                              ))}
+                            {customerPayments.length === 0 && (
+                              <TableRow>
+                                <TableCell colSpan={5} align="center" sx={{ py: 2 }}>
+                                  <Typography variant="caption" color="textSecondary">No payment transactions recorded yet</Typography>
+                                </TableCell>
+                              </TableRow>
+                            )}
                           </TableBody>
                         </Table>
                       </TableContainer>
