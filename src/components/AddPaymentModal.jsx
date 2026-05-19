@@ -165,10 +165,9 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
 
     try {
       // 1. Process PATCH for each affected invoice
+      const token = localStorage.getItem('token');
       for (const item of allocatedInvoices) {
-        // Construct complete payload by spreading original invoice properties
         const payload = {
-          ...item,
           paidAmount: item.newPaid,
           paymentStatus: item.newStatus,
           paymentParts: [
@@ -177,14 +176,9 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
           ]
         };
 
-        // Clean up temporary UI fields not required by DB schema
-        delete payload.remainingBalance;
-        delete payload.allocated;
-        delete payload.newPaid;
-        delete payload.remainingAfter;
-        delete payload.newStatus;
-
-        await API.put(`/sales/${item._id}`, payload);
+        await API.put(`/sales/${item._id}`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         settledList.push({
           invoiceNumber: item.invoiceNumber || item._id.toString().slice(-6),
           allocated: item.allocated,
