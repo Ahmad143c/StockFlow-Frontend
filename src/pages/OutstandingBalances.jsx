@@ -120,7 +120,7 @@ const OutstandingBalances = () => {
       });
 
       // Filter to only keep customers with positive outstanding balance
-      finalData = Object.values(map).filter(c => c.remainingBalance > 0);
+      let finalData = Object.values(map).filter(c => c.remainingBalance > 0);
 
       // Map days overdue onto the dataset
       finalData = finalData.map(c => {
@@ -138,6 +138,7 @@ const OutstandingBalances = () => {
 
       setData(finalData);
     } catch (e) {
+      console.error('Fetch Outstanding Error:', e);
       setError(e.response?.data?.message || 'Failed to fetch outstanding balances');
     } finally {
       setLoading(false);
