@@ -333,13 +333,32 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
     [sellerId, startDate, endDate, isValidSellerId]
   );
 
-  // Fetch actual payment transactions recorded in customer ledger
+  // Fetch actual payment transactions recorded in customer ledger and from invoice paymentParts
   const fetchCustomerPayments = useCallback(async (cust) => {
     if (!cust) {
       setCustomerPayments([]);
       return;
     }
-    // Find a valid 24-character MongoDB ObjectId from cust._id or invoices
+
+    // Extract all paymentParts from the customer's invoices
+    let invoicePayments = [];
+    if (cust.invoices && Array.isArray(cust.invoices)) {
+      cust.invoices.forEach(inv => {
+        if (inv.paymentParts && Array.isArray(inv.paymentParts)) {
+          inv.paymentParts.forEach(part => {
+            invoicePayments.push({
+              date: part.date || inv.createdAt,
+              amount: part.amount,
+              notes: 'Smart Payment Allocation',
+              paymentMethod: inv.paymentMethod || 'Cash',
+              invoiceNumber: inv.invoiceNumber || String(inv._id).slice(-6)
+            });
+          });
+        }
+      });
+    }
+
+    // Find a valid 24-character MongoDB ObjectId from cust._id or invoices for formal ledger
     let resolvedId = cust._id;
     if (!resolvedId || !/^[0-9a-fA-F]{24}$/.test(resolvedId)) {
       const invList = cust.invoices || [];
@@ -352,32 +371,35 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
       }
     }
 
-    if (!resolvedId || !/^[0-9a-fA-F]{24}$/.test(resolvedId)) {
-      setCustomerPayments([]);
-      return;
+    let formalPayments = [];
+    if (resolvedId && /^[0-9a-fA-F]{24}$/.test(resolvedId)) {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await API.get(`/customers/ledger/${resolvedId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const ledgerEntries = Array.isArray(res.data) ? res.data : [];
+        // Filter only payment entries
+        formalPayments = ledgerEntries.filter(entry => {
+          return entry.transactionType === 'Payment' || entry.type === 'Payment' || entry.credit > 0;
+        }).map(entry => ({
+          date: entry.transactionDate || entry.date || new Date().toISOString(),
+          amount: entry.credit || entry.amount || 0,
+          notes: entry.description || entry.notes || 'Smart Payment Allocation',
+          paymentMethod: entry.paymentMethod || 'Cash',
+          invoiceNumber: entry.reference || '-'
+        }));
+      } catch (e) {
+        console.error('Failed to fetch customer ledger:', e);
+      }
     }
 
-    try {
-      const token = localStorage.getItem('token');
-      const res = await API.get(`/customers/ledger/${resolvedId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const ledgerEntries = Array.isArray(res.data) ? res.data : [];
-      // Filter only payment entries (excluding Sale, Invoice, debit)
-      const payments = ledgerEntries.filter(entry => {
-        return entry.transactionType === 'Payment' || entry.type === 'Payment' || entry.credit > 0;
-      }).map(entry => ({
-        date: entry.transactionDate || entry.date || new Date().toISOString(),
-        amount: entry.credit || entry.amount || 0,
-        notes: entry.description || entry.notes || 'Smart Payment Allocation',
-        paymentMethod: entry.paymentMethod || 'Cash',
-        invoiceNumber: entry.reference || '-'
-      }));
-      setCustomerPayments(payments);
-    } catch (e) {
-      console.error('Failed to fetch customer payments/ledger:', e);
-      setCustomerPayments([]);
-    }
+    // Merge both arrays. Since paymentParts represent the exact invoice-level allocation,
+    // we use invoicePayments primarily for walk-ins, but combine them.
+    // To avoid duplicates if formal ledger recorded the same event, we can just deduplicate by amount and date if needed,
+    // but for walk-in customers formalPayments will just be empty.
+    const combinedPayments = [...invoicePayments, ...formalPayments];
+    setCustomerPayments(combinedPayments);
   }, []);
 
   // Open customer and fetch their invoices

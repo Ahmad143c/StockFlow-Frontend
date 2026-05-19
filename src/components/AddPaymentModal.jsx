@@ -137,7 +137,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
 
       let newStatus = inv.paymentStatus;
       if (allocated > 0) {
-        newStatus = remainingAfter === 0 ? 'paid' : 'partial';
+        newStatus = remainingAfter === 0 ? 'Paid' : 'Partial Paid';
       }
 
       return {
@@ -166,9 +166,16 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
     try {
       // 1. Process PATCH for each affected invoice
       for (const item of allocatedInvoices) {
+        const existingParts = item.paymentParts || [];
+        const newPaymentPart = {
+          amount: Number(item.allocated),
+          date: formData.date || new Date().toISOString().split('T')[0]
+        };
+
         await API.put(`/sales/${item._id}`, {
           paidAmount: item.newPaid,
-          paymentStatus: item.newStatus
+          paymentStatus: item.newStatus,
+          paymentParts: [...existingParts, newPaymentPart]
         });
         settledList.push({
           invoiceNumber: item.invoiceNumber || item._id.toString().slice(-6),
@@ -177,30 +184,34 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
         });
       }
 
-      // 2. Process POST to customer's ledger
-      let paymentRecorded = false;
-      // Try GET /customers/:customerId/payments endpoint first
-      try {
-        await API.post(`/customers/${customer._id}/payments`, {
-          amount: Number(formData.amount),
-          date: formData.date,
-          notes: formData.notes || `FIFO Payment Allocation. Settled invoices: ${settledList.map(s => s.invoiceNumber).join(', ')}`,
-          paymentMethod: formData.paymentMethod
-        });
-        paymentRecorded = true;
-      } catch (err) {
-        console.log('Formal payments endpoint not found, trying fallback payment endpoint');
-      }
+      // 2. Process POST to customer's ledger ONLY if they are a registered formal customer (valid 24-char hex ObjectId)
+      const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(customer?._id);
 
-      if (!paymentRecorded) {
-        // Fallback to general payment endpoint
-        await API.post('/customers/payment', {
-          customerId: customer._id,
-          amount: Number(formData.amount),
-          paymentMethod: formData.paymentMethod,
-          date: formData.date,
-          notes: formData.notes
-        });
+      if (isValidObjectId) {
+        let paymentRecorded = false;
+        // Try GET /customers/:customerId/payments endpoint first
+        try {
+          await API.post(`/customers/${customer._id}/payments`, {
+            amount: Number(formData.amount),
+            date: formData.date,
+            notes: formData.notes || `FIFO Payment Allocation. Settled invoices: ${settledList.map(s => s.invoiceNumber).join(', ')}`,
+            paymentMethod: formData.paymentMethod
+          });
+          paymentRecorded = true;
+        } catch (err) {
+          console.log('Formal payments endpoint not found, trying fallback payment endpoint');
+        }
+
+        if (!paymentRecorded) {
+          // Fallback to general payment endpoint
+          await API.post('/customers/payment', {
+            customerId: customer._id,
+            amount: Number(formData.amount),
+            paymentMethod: formData.paymentMethod,
+            date: formData.date,
+            notes: formData.notes
+          });
+        }
       }
 
       // Display Success Summary
@@ -210,7 +221,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
       });
     } catch (e) {
       console.error(e);
-      setError(e.response?.data?.message || 'Failed to process payment allocation. Note: Only registered customers can receive payments.');
+      setError(e.response?.data?.error || e.response?.data?.message || 'Failed to process payment allocation. Note: Only registered customers can receive payments.');
     } finally {
       setLoading(false);
     }
