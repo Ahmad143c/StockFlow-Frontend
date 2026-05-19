@@ -172,8 +172,16 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
           date: formData.date || new Date().toISOString().split('T')[0]
         };
 
+        const cleanedItems = (item.items || []).map(it => ({
+          ...it,
+          productId: it.productId?._id || it.productId
+        }));
+
         await API.put(`/sales/${item._id}`, {
           ...item,
+          customerId: item.customerId?._id || item.customerId,
+          sellerId: item.sellerId?._id || item.sellerId,
+          items: cleanedItems,
           paidAmount: item.newPaid,
           paymentStatus: item.newStatus,
           paymentParts: [...existingParts, newPaymentPart]
