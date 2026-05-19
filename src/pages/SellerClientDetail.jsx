@@ -588,7 +588,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
   }, [invoices]);
 
   const totalRevenue = useMemo(
-    () => invoices.reduce((sum, inv) => sum + Number(inv.totalAmount || inv.netAmount || 0), 0),
+    () => invoices.reduce((sum, inv) => sum + Number(inv.netAmount || inv.totalAmount || 0), 0),
     [invoices]
   );
 
@@ -1045,12 +1045,12 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
     allInvoices.forEach(inv => {
       const d = new Date(inv.date || inv.createdAt || Date.now());
       const key = `${d.getFullYear()}`;
-      yearlyTotalsAll[key] = (yearlyTotalsAll[key] || 0) + Number(inv.totalAmount || inv.netAmount || 0);
+      yearlyTotalsAll[key] = (yearlyTotalsAll[key] || 0) + Number(inv.netAmount || inv.totalAmount || 0);
     });
     const sortedYearlyTotals = Object.entries(yearlyTotalsAll).sort((a, b) => b[0].localeCompare(a[0])).reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
-    const grandTotal = allInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount || inv.netAmount || 0), 0);
+    const grandTotal = allInvoices.reduce((sum, inv) => sum + Number(inv.netAmount || inv.totalAmount || 0), 0);
     const customersHTML = customers.map((cust, idx) => {
-      const custTotal = (cust.invoices || []).reduce((sum, inv) => sum + Number(inv.totalAmount || inv.netAmount || 0), 0);
+      const custTotal = (cust.invoices || []).reduce((sum, inv) => sum + Number(inv.netAmount || inv.totalAmount || 0), 0);
       return `<tr><td style="padding:10px;border-bottom:1px solid #ddd;text-align:center;">${idx + 1}</td><td style="padding:10px;border-bottom:1px solid #ddd;font-weight:bold;">${cust.name}</td><td style="padding:10px;border-bottom:1px solid #ddd;">${cust.email || '-'}</td><td style="padding:10px;border-bottom:1px solid #ddd;">${cust.contact || '-'}</td><td style="padding:10px;border-bottom:1px solid #ddd;text-align:center;">${cust.invoices?.length || 0}</td><td style="padding:10px;border-bottom:1px solid #ddd;text-align:right;font-weight:bold;">Rs. ${custTotal.toLocaleString()}</td></tr>`;
     }).join('');
     const monthlyHTML = Object.entries(sortedMonthlyTotals).map(([month, total]) => `<tr><td style="padding:8px;border-bottom:1px solid #ddd;">${month}</td><td style="padding:8px;border-bottom:1px solid #ddd;text-align:right;font-weight:bold;">Rs. ${total.toLocaleString()}</td></tr>`).join('');
@@ -1730,8 +1730,7 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                             </Box>
                             <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                               <ReceiptIcon sx={{ fontSize: { xs: 12, sm: 14 } }} /> Remaining Amount of Invoices: Rs. {((selectedCustomer.invoices || []).reduce((sum, inv) => {
-                                const refundTotal = inv.refunds ? inv.refunds.reduce((s, r) => s + Number(r.totalRefundAmount || 0), 0) : 0;
-                                const remaining = Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - refundTotal - Number(inv.paidAmount || 0));
+                                const remaining = Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - Number(inv.paidAmount || 0));
                                 return sum + remaining;
                               }, 0)).toLocaleString()}
                             </Typography>
@@ -2254,12 +2253,11 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                                     </Tooltip>
                                   )}
                                 </TableCell>
-                                <TableCell align="right" sx={cellSx}>{(() => { const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0; const actualPaid = Number(inv.netAmount || inv.totalAmount || 0) - refundTotal; return `Rs. ${actualPaid.toLocaleString()}`; })()}</TableCell>
-                                <TableCell align="right" sx={cellSx}>{(() => { const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0; const remaining = Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - refundTotal - Number(inv.paidAmount || 0)); return `Rs. ${remaining.toLocaleString()}`; })()}</TableCell>
+                                <TableCell align="right" sx={cellSx}>Rs. {Number(inv.paidAmount || 0).toLocaleString()}</TableCell>
+                                <TableCell align="right" sx={cellSx}>Rs. {Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - Number(inv.paidAmount || 0)).toLocaleString()}</TableCell>
                                 <TableCell align="center" sx={cellSx}>
                                   {(() => {
-                                    const refundTotal = inv.refunds ? inv.refunds.reduce((sum, r) => sum + Number(r.totalRefundAmount || 0), 0) : 0;
-                                    const remaining = Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - refundTotal - Number(inv.paidAmount || 0));
+                                    const remaining = Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - Number(inv.paidAmount || 0));
                                     return remaining > 0 ? (
                                       <Button
                                         size="small"
@@ -2311,7 +2309,10 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
                     >
                       <Typography variant="body2" color="textSecondary">
                         Total Invoices: <strong>{invoices.length}</strong> | Total Amount:{' '}
-                        <strong>Rs. {totalRevenue.toLocaleString()}</strong>
+                        <strong>Rs. {totalRevenue.toLocaleString()}</strong> | Remaining Invoices Amount:{' '}
+                        <strong style={{ color: '#d32f2f' }}>
+                          Rs. {invoices.reduce((sum, inv) => sum + Math.max(0, Number(inv.netAmount || inv.totalAmount || 0) - Number(inv.paidAmount || 0)), 0).toLocaleString()}
+                        </strong>
                       </Typography>
                     </Box>
 

@@ -151,7 +151,7 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
     try {
       // 1. Process PATCH for each affected invoice
       for (const item of allocatedInvoices) {
-        await API.patch(`/sales/${item._id}`, {
+        await API.put(`/sales/${item._id}`, {
           paidAmount: item.newPaid,
           paymentStatus: item.newStatus
         });
