@@ -165,19 +165,10 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
 
     try {
       // 1. Process PATCH for each affected invoice
-      const token = localStorage.getItem('token');
       for (const item of allocatedInvoices) {
-        const payload = {
+        await API.put(`/sales/${item._id}`, {
           paidAmount: item.newPaid,
-          paymentStatus: item.newStatus,
-          paymentParts: [
-            ...(Array.isArray(item.paymentParts) ? item.paymentParts : []),
-            { amount: Number(item.allocated), date: formData.date }
-          ]
-        };
-
-        await API.put(`/sales/${item._id}`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
+          paymentStatus: item.newStatus
         });
         settledList.push({
           invoiceNumber: item.invoiceNumber || item._id.toString().slice(-6),

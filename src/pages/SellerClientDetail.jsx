@@ -352,51 +352,31 @@ const SellerClientDetail = ({ sellerId: propSellerId }) => {
       }
     }
 
-    let payments = [];
-    let ledgerSuccess = false;
-
-    if (resolvedId && /^[0-9a-fA-F]{24}$/.test(resolvedId)) {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await API.get(`/customers/ledger/${resolvedId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const ledgerEntries = Array.isArray(res.data) ? res.data : [];
-        // Filter only payment entries (excluding Sale, Invoice, debit)
-        payments = ledgerEntries.filter(entry => {
-          return entry.transactionType === 'Payment' || entry.type === 'Payment' || entry.credit > 0;
-        }).map(entry => ({
-          date: entry.transactionDate || entry.date || new Date().toISOString(),
-          amount: entry.credit || entry.amount || 0,
-          notes: entry.description || entry.notes || 'Smart Payment Allocation',
-          paymentMethod: entry.paymentMethod || 'Cash',
-          invoiceNumber: entry.reference || '-'
-        }));
-        ledgerSuccess = true;
-      } catch (e) {
-        console.warn('Formal ledger API failed or returned 500, falling back to invoice paymentParts aggregation:', e);
-      }
+    if (!resolvedId || !/^[0-9a-fA-F]{24}$/.test(resolvedId)) {
+      setCustomerPayments([]);
+      return;
     }
 
-    if (ledgerSuccess && payments.length > 0) {
-      setCustomerPayments(payments);
-    } else {
-      // Fallback: Aggregate from invoices' paymentParts
-      const fallbackPayments = [];
-      const invList = cust.invoices || [];
-      invList.forEach(inv => {
-        const parts = Array.isArray(inv.paymentParts) ? inv.paymentParts : [];
-        parts.forEach(part => {
-          fallbackPayments.push({
-            date: part.date || inv.date || inv.createdAt || new Date().toISOString(),
-            amount: Number(part.amount || 0),
-            notes: `Invoice payment for #${inv.invoiceNumber || inv._id?.toString().slice(-6)}`,
-            paymentMethod: inv.paymentMethod || 'Cash',
-            invoiceNumber: inv.invoiceNumber || inv._id?.toString().slice(-6)
-          });
-        });
+    try {
+      const token = localStorage.getItem('token');
+      const res = await API.get(`/customers/ledger/${resolvedId}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setCustomerPayments(fallbackPayments);
+      const ledgerEntries = Array.isArray(res.data) ? res.data : [];
+      // Filter only payment entries (excluding Sale, Invoice, debit)
+      const payments = ledgerEntries.filter(entry => {
+        return entry.transactionType === 'Payment' || entry.type === 'Payment' || entry.credit > 0;
+      }).map(entry => ({
+        date: entry.transactionDate || entry.date || new Date().toISOString(),
+        amount: entry.credit || entry.amount || 0,
+        notes: entry.description || entry.notes || 'Smart Payment Allocation',
+        paymentMethod: entry.paymentMethod || 'Cash',
+        invoiceNumber: entry.reference || '-'
+      }));
+      setCustomerPayments(payments);
+    } catch (e) {
+      console.error('Failed to fetch customer payments/ledger:', e);
+      setCustomerPayments([]);
     }
   }, []);
 
