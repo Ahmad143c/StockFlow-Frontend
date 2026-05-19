@@ -373,7 +373,22 @@ const SellerSaleEntry = () => {
 
 
   const saveSale = async () => {
-    setError(''); setSuccess(''); setSubmitting(true);
+    setError(''); setSuccess('');
+    
+    // Validate Cash Amount if payment method is Cash
+    if (paymentMethod === 'Cash') {
+      const cashValStr = String(paidAmount).trim();
+      if (cashValStr !== '' && Number(cashValStr) !== 0) {
+        if (Number(cashValStr) !== Number(netAmount)) {
+          const errMsg = `Cash Amount (Rs. ${Number(cashValStr).toLocaleString()}) must match the Net Amount (Rs. ${netAmount.toLocaleString()}) exactly, or be left empty.`;
+          alert(errMsg);
+          setError(errMsg);
+          return null;
+        }
+      }
+    }
+
+    setSubmitting(true);
     const token = localStorage.getItem('token');
     try {
       // If payment proof file is selected, upload it; otherwise use existing URL
@@ -638,6 +653,20 @@ const SellerSaleEntry = () => {
       const globalDiscount = Number(editForm.discountAmount || 0);
       const totalDiscountAmount = itemDiscounts + globalDiscount;
       const editNetAmount = editForm.items.reduce((sum, i) => sum + ((Number(i.perPiecePrice) * Number(i.quantity)) - (Number(i.discount) || 0)), 0) - globalDiscount;
+      
+      // Validate Cash Amount if payment method is Cash
+      if (editForm.paymentMethod === 'Cash') {
+        const cashValStr = String(editForm.paidAmount).trim();
+        if (cashValStr !== '' && Number(cashValStr) !== 0) {
+          if (Number(cashValStr) !== Number(editNetAmount)) {
+            const errMsg = `Cash Amount (Rs. ${Number(cashValStr).toLocaleString()}) must match the Net Amount (Rs. ${editNetAmount.toLocaleString()}) exactly, or be left empty.`;
+            alert(errMsg);
+            setError(errMsg);
+            return;
+          }
+        }
+      }
+
       const editChangeAmount = Math.max(0, (Number(editForm.paidAmount) || 0) - editNetAmount);
       if (!Array.isArray(editForm.items) || editForm.items.length === 0) { setError('Add at least one item'); return; }
       if (editForm.items.some(it => !(it.productId || it.SKU))) { setError('Please select a product for each item'); return; }

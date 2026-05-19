@@ -29,24 +29,25 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
     setFetchingInvoices(true);
     setError(null);
     try {
-      const res = await API.get(`/sales${customer._id ? `?customerId=${customer._id}` : ''}`);
+      const hasValidId = customer._id && /^[0-9a-fA-F]{24}$/.test(customer._id);
+      const res = await API.get(`/sales${hasValidId ? `?customerId=${customer._id}` : ''}`);
       const rawSales = Array.isArray(res.data) ? res.data : [];
       
       // Filter unpaid, partial, or credit invoices specifically for THIS customer
       const unpaid = rawSales
         .filter(s => {
           const status = (s.paymentStatus || '').toLowerCase();
-          const isEligibleStatus = status === 'unpaid' || status === 'partial' || status === 'credit';
+          const isEligibleStatus = status.includes('unpaid') || status.includes('partial') || status.includes('credit');
           if (!isEligibleStatus) return false;
 
           // Perform robust customer matching
           const sCustId = s.customerId?._id || s.customerId;
-          const sName = s.customerName || s.customer?.name || '';
-          const sContact = s.customerContact || s.customer?.phone || s.customerPhone || '';
+          const sName = (s.customerName || s.customer?.name || '').trim();
+          const sContact = (s.customerContact || s.customer?.phone || s.customerPhone || '').trim();
 
           const matchId = sCustId && customer._id && String(sCustId) === String(customer._id);
-          const matchName = sName && customer.name && sName.toLowerCase() === customer.name.toLowerCase();
-          const matchContact = sContact && customer.contact && String(sContact) === String(customer.contact);
+          const matchName = sName && customer.name && sName.toLowerCase() === customer.name.trim().toLowerCase();
+          const matchContact = sContact && customer.contact && customer.contact.trim() !== '' && sContact.toLowerCase() === customer.contact.trim().toLowerCase();
 
           return matchId || matchName || matchContact;
         })
