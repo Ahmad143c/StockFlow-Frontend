@@ -166,9 +166,17 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
     try {
       // 1. Process PATCH for each affected invoice
       for (const item of allocatedInvoices) {
+        const existingParts = Array.isArray(item.paymentParts) ? item.paymentParts : [];
+        const newPaymentPart = {
+          amount: Number(item.allocated),
+          date: formData.date || new Date().toISOString().split('T')[0]
+        };
+
         await API.put(`/sales/${item._id}`, {
+          ...item,
           paidAmount: item.newPaid,
-          paymentStatus: item.newStatus
+          paymentStatus: item.newStatus,
+          paymentParts: [...existingParts, newPaymentPart]
         });
         settledList.push({
           invoiceNumber: item.invoiceNumber || item._id.toString().slice(-6),
