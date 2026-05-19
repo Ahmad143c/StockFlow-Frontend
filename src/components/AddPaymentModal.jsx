@@ -166,10 +166,25 @@ const AddPaymentModal = ({ open, onClose, customer, preselectedInvoice }) => {
     try {
       // 1. Process PATCH for each affected invoice
       for (const item of allocatedInvoices) {
-        await API.put(`/sales/${item._id}`, {
+        // Construct complete payload by spreading original invoice properties
+        const payload = {
+          ...item,
           paidAmount: item.newPaid,
-          paymentStatus: item.newStatus
-        });
+          paymentStatus: item.newStatus,
+          paymentParts: [
+            ...(Array.isArray(item.paymentParts) ? item.paymentParts : []),
+            { amount: Number(item.allocated), date: formData.date }
+          ]
+        };
+
+        // Clean up temporary UI fields not required by DB schema
+        delete payload.remainingBalance;
+        delete payload.allocated;
+        delete payload.newPaid;
+        delete payload.remainingAfter;
+        delete payload.newStatus;
+
+        await API.put(`/sales/${item._id}`, payload);
         settledList.push({
           invoiceNumber: item.invoiceNumber || item._id.toString().slice(-6),
           allocated: item.allocated,
