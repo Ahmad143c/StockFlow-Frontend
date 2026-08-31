@@ -794,7 +794,9 @@ const SellerSaleEntry = () => {
       if (e.code === 'ECONNABORTED') {
         setError('Email operation timed out. Please try again.');
       } else {
-        setError(e.response?.data?.error || 'Failed to resend email');
+        const errorMessage = e.response?.data?.error || e.message || 'Failed to resend email';
+        console.error('Email resend error:', errorMessage);
+        setError(`Failed to resend email: ${errorMessage}`);
       }
     }
   };

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Button, TextField, Grid, CircularProgress,
-  Alert, Chip, IconButton, Tooltip, InputAdornment, MenuItem
+  Alert, Chip, IconButton, Tooltip, InputAdornment, MenuItem, Tabs, Tab
 } from '@mui/material';
 import { useDarkMode } from '../context/DarkModeContext';
 import API from '../api/api';
@@ -19,13 +19,28 @@ const CustomerLedger = () => {
   const { darkMode } = useDarkMode();
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
+  const [sellers, setSellers] = useState([]);
+  const [selectedSellerId, setSelectedSellerId] = useState('all');
   const [loading, setLoading] = useState(false);
+  const [sellersLoading, setSellersLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All'); // 'All', 'Outstanding', 'Clear'
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [overdueMap, setOverdueMap] = useState({});
+
+  const fetchSellers = useCallback(async () => {
+    setSellersLoading(true);
+    try {
+      const res = await API.get('/users/sellers');
+      setSellers(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Failed to fetch sellers:', err);
+    } finally {
+      setSellersLoading(false);
+    }
+  }, []);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -65,9 +80,25 @@ const CustomerLedger = () => {
       }
 
       // If user is seller/staff, fetch only their own sales
+      // Also filter by selected seller tab if admin
       let allSales = [];
       try {
-        const url = `/sales${currentUserRole === 'staff' && currentUserId ? `?sellerId=${currentUserId}` : ''}`;
+        let url = '/sales';
+        const params = new URLSearchParams();
+        
+        // If staff, only show their own sales
+        if (currentUserRole === 'staff' && currentUserId) {
+          params.append('sellerId', currentUserId);
+        }
+        // If admin and specific seller selected, filter by that seller
+        else if (currentUserRole === 'admin' && selectedSellerId !== 'all') {
+          params.append('sellerId', selectedSellerId);
+        }
+        
+        if (params.toString()) {
+          url += `?${params.toString()}`;
+        }
+        
         const salesRes = await API.get(url);
         allSales = Array.isArray(salesRes.data) ? salesRes.data : [];
       } catch (err) {
@@ -175,11 +206,15 @@ const CustomerLedger = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedSellerId]);
 
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
+
+  useEffect(() => {
+    fetchSellers();
+  }, [fetchSellers]);
 
   // Apply filters
   const filteredCustomers = useMemo(() => {
@@ -229,6 +264,35 @@ const CustomerLedger = () => {
           </Button>
         </Box>
       </Box>
+
+      {/* Seller Tabs - Only show for admin users */}
+      {!sellersLoading && sellers.length > 0 && (
+        <Paper elevation={2} sx={{ mb: 3, borderRadius: 2 }}>
+          <Tabs
+            value={selectedSellerId}
+            onChange={(e, newValue) => setSelectedSellerId(newValue)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.95rem',
+                minHeight: 48
+              }
+            }}
+          >
+            <Tab label="All Sellers" value="all" />
+            {sellers.map((seller) => (
+              <Tab 
+                key={seller._id} 
+                label={seller.name || seller.username || seller.email} 
+                value={seller._id}
+              />
+            ))}
+          </Tabs>
+        </Paper>
+      )}
 
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
