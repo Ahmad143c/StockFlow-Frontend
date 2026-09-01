@@ -9,7 +9,7 @@ const baseURL = isLocalhost
   ? 'http://localhost:5000/api'
   : isCodespaces
     ? window.location.origin.replace('-3000', '-5000') + '/api'
-    : 'https://stockflow-backend-production-22de.up.railway.app/api';
+    : 'https://stock-flow-backend-three.vercel.app/api';
 
 const API = axios.create({
   baseURL,
